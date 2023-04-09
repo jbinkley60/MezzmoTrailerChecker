@@ -35,7 +35,7 @@ A utility to help you manage your Mezzmo local trailer files.
    - run trailer_checker.py trailer or
    - run trailer_checker.py new
    - run trailer_checker.py csv trailer
-   - review CSV file which ahs a complete listing of Mezzmo trailers 
+   - review CSV file which has a complete listing of Mezzmo trailers 
 
    
 ## Command line arguments:  (Limit 1 at a time)
