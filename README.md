@@ -23,7 +23,7 @@ A utility to help you manage your Mezzmo local trailer files.
 
 ## Installation and usage:
 
--  Download the Mezzmo Trailer Checker zipfile
+-  Download the Mezzmo Trailer Checker release zipfile
 -  Unzip file into an empty folder on your system
 -  Ensure you have Python installed on Windows or Linux.  Preferably version 3.x 
 -  Edit the config.text file with the location of your Mezzmo
