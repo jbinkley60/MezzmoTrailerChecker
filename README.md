@@ -48,4 +48,6 @@ A utility to help you manage your Mezzmo local trailer files.
          
  The CSV export utility currently requires Python version 3.<br/><br/>
 
+See the latest updates on the <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki">Mezzmo Trailer wiki</a>.
+
 
