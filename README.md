@@ -6,26 +6,30 @@ A utility to help you manage your Mezzmo local trailer files.
 
 - Read current You Tube movie trailer information from the Mezzmo database
 - Track movies which have local trailers, which don't and last checked time
-- Download high quality trailers from You Tube for local hosting
-- Fast You Tube download speeds
+- Download high quality trailers from You Tube for local playback
+- Fast You Tube download speeds with daily limit setting
 - Detect You Tube trailers which cannot be downloaded and marks them "Bad" 
 - Automatically normalize and trim the You Tube trailers names
 - User selectable feature of 480P, 720P or 1080P quality trailers (if available, otherwise best quality available)
+- Option to set the maximum duration of trailers
 - Automatically move trailers to designated location (i.e. NAS, local disk etc.)
 - Option for automatically <a href="https://github.com/Conceiva/MezzmoKodiPlugin/wiki/Managing-Your-Library#metadata-locking">locking the Mezzmo metadata</a> to avoid overriding trailer information
 - Option for how many movies to check in each batch run of the Mezzmo Trailer Checker (1-20)
 - Option to limit how many trailers per movie (1-20)
 - Option to order trailers by size
 - Option for supporting prefer <a href="https://github.com/Conceiva/MezzmoKodiPlugin/wiki/Movie-Trailers#prefer-local-trailers">local trailer capability</a> to allow You Tube trailers for Mezzmo web interface
+- Option to prefer official trailers
 - Option for only local trailers
+- Check feature to update trailer size, resolution and duration after manual trailer changes
 - Full detailed logfile
+- Full Trailer checker statistics
 <br/>
 
 ## Installation and usage:
 
 -  Download the Mezzmo Trailer Checker release zipfile
 -  Unzip file into an empty folder on your system
--  Ensure you have Python installed on Windows or Linux.  Preferably version 3.x 
+-  Ensure you have Python installed on Windows.  Minimum version 3.x 
 -  Edit the config.text file with the location of your Mezzmo
    database and trailer folder. 
 -  Open a command window and run trailer_checker.py<br/>
@@ -44,7 +48,10 @@ A utility to help you manage your Mezzmo local trailer files.
 - <b>trailer new</b>    -  Runs the trailer checker normally starting with the newest movie in the Mezzmo database.<br/> 
 - <b>sync</b>           -  Syncs the Mezzmo Trailer Checker to the Mezzmo database without fetching any trailers. <br/> 
 - <b>csv trailer</b>    -  Creates a CSV file with the trailer information in the Mezzmo Trailer Checker<br/> 
-- <b>csv history</b>    -  Creates a CSV file with the history information in the Mezzmo Trailer Checker</br>          
+- <b>csv history</b>    -  Creates a CSV file with the history information in the Mezzmo Trailer Checker</br>
+- <b>check</b>		-  Updates missing trailer duration, size or resolution information in the Checker database</br>
+- <b>check new</b>	-  Updates and overwrites trailer duration, size and resolution fields in Checker database</br>
+- <b>stats</b>		-  Generates summary statistics for trailers</br>          
          
  The CSV export utility currently requires Python version 3.<br/><br/>
 
