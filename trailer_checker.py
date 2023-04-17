@@ -14,7 +14,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.2'
+version = 'version 0.0.3'
 
 sysarg1 = ''
 sysarg2 = ''
@@ -203,8 +203,10 @@ def getMezzmoTrailers(sysarg1= ''):                                     #  Query
             dbtuples = dbcurr.fetchall()     
             del dbcurr
             for a in range(len(dbtuples)):
-                curp = trdb.execute('SELECT extras_ID, extras_FileID FROM mTrailers WHERE extras_ID=? AND    \
-                extras_FileID=?', (dbtuples[a][1], dbtuples[a][2],))   #  Check Trailers
+                #curp = trdb.execute('SELECT extras_ID, extras_FileID FROM mTrailers WHERE extras_ID=? AND    \
+                #extras_FileID=?', (dbtuples[a][1], dbtuples[a][2],))   #  Check Trailers
+                curp = trdb.execute('SELECT extras_ID, extras_FileID FROM mTrailers WHERE extras_File=?',     \
+                (dbtuples[a][4],))                                     #  Check Trailers
                 currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')                
                 trailertuple = curp.fetchone()
                 if not trailertuple:                                   #  Add to trailer database
@@ -351,6 +353,8 @@ def getMovieList(sysarg1= '', sysarg2= ''):                               # Get 
                     print(mgenlog)
                     genLog(mgenlog)
                     mvcount += 1
+                    db.execute('DELETE FROM mTemp')                       # Clear temp table before writing
+                    db.commit()   
                     for ytube in chktuple:                                # Get local trailers
                         trinfo = getTrailer(ytube[3])
                         if trinfo[0] == 0 and int(trinfo[4]) <= maxdur:   # Trailer fetched and not too long
@@ -524,7 +528,7 @@ def updateTemp(tempinfo, trurl, tedb):                                    # Upda
         mtrailerloc = tr_config['mtrailerloc']                            # Get config information
         mlock = tr_config['mlock'].lower()
         newtrailer =  mtrailerloc + tempinfo[1]                           # Full path to new trailer
-        resolution =  int(tempinfo[3].strip('p'))                         # Resolution as number    
+        resolution =  int(tempinfo[3].strip('p'))                         # Resolution as number 
         tecurr = tedb.execute('SELECT * FROM mtrailers WHERE extras_File=?', (trurl,)) 
         tetuple = tecurr.fetchone()                                       # Get current trailer info      
         if 'yes' in mlock:                                                # Set lock if enabled
@@ -612,7 +616,7 @@ def getTrailer(trailer):                                   # Download You Tube t
             mgenlog = 'Fetched Youtube trailer at: ' + fmt + ' - ' + trailer
             genLog(mgenlog)
             print(mgenlog)
-            trfile = renameFiles()                           # Cleanup trailer name and move to temp folder  
+            trfile = renameFiles()                           # Cleanup trailer name and move to temp folder
             return [fetch_result, trfile[0], trfile[1], fmt, trfile[2]]
                                                              # Return trailer file info and status
                                                              # trfile[0] = new trailer file name
@@ -651,12 +655,19 @@ def getFormats(trailer):                           # Get available You Tube Trai
             return 'Error'
 
 
-def getDuration(trailerfile):                      # Get trailer duration from ffmpeg
+def getDuration(trailerfile):                     # Get trailer duration from ffmpeg
 
+    try:
+
+        if '&' in trailerfile:                    # Invalid name for ffpmeg processing
+            mgenlog = 'Trailer file name bad name: ' + trailerfile
+            genLog(mgenlog)
+            print(mgenlog)
+            return (1,1,1)
         dur_cmd = "ffmpeg -i " + trailerfile + " > output1.txt 2>&1"
         fetch_result = subprocess.call(dur_cmd, shell=True)
-        #print('Fetch result is: ' + str(fetch_result))
-        fileh = open("output1.txt")                # open ffmpeg output file
+        #print('Fetch result is: ' + str(fetch_result) + ' - ' + trailerfile)
+        fileh = open("output1.txt", encoding='utf-8', errors='ignore') # open ffmpeg output file
         data = fileh.readlines()                   # Read file into data
         fileh.close()
         found = 0
@@ -687,6 +698,13 @@ def getDuration(trailerfile):                      # Get trailer duration from f
             duration = 0
         return (int(hres_text), int(vres_text), duration)
         #print(str(duration))
+
+    except Exception as e:
+        print (e)
+        mgenlog = 'There was a problem calculating the duration for: ' + trailerfile
+        genLog(mgenlog)
+        print(mgenlog)
+        return (0,0,0)
 
 
 def getSeconds(dur_text):                          # Convert time string to secs
@@ -789,21 +807,30 @@ def checkFiles(sysarg1 = '', sysarg2 = '', ccount = 0): # Check size, resolution
             lpos = dbtuple[fname][0].rfind('\\')     # Slice file name 
             fpart = dbtuple[fname][0][lpos+1:]       # Get file name portion
             newname = trailerloc + fpart             # Local path to trailer file
-            if os.path.isfile(newname):              # Verify trailerfile exists
+            currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            target = '%' + fpart                     # Find trailer by like name 
+            if os.path.isfile(newname ):             # Verify trailerfile exists
                 # print('File name is: ' +  newname)
-                currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')   
                 fdur = getDuration(newname)
                 filestat = os.stat(newname)
                 fsize = filestat.st_size             # Get trailer size in bytes
-                target = '%' + fpart                 # Find trailer by like name
                 #print(str(fdur[1]) + ' ' + str(fdur[2]) + ' ' + str(fsize) + ' ' + newname)
-                db.execute('UPDATE mTrailers SET lastchecked=?, tr_resol=?, tr_size=?, trStatus=?, \
-                trDuration=? WHERE extras_File LIKE ?', (currTime, fdur[1], fsize, 'Yes', fdur[2], \
-                target,))
+                if fdur[0] == 1 and fdur[1] == 1 and fdur[2] == 1:
+                    db.execute('UPDATE mTrailers SET lastchecked=?, tr_resol=?, tr_size=?, trStatus=?,     \
+                    trDuration=? WHERE extras_File LIKE ?', (currTime, fdur[1], fsize, 'Invalid', fdur[2], \
+                    target,))
+                else:
+                    db.execute('UPDATE mTrailers SET lastchecked=?, tr_resol=?, tr_size=?, trStatus=?, \
+                    trDuration=? WHERE extras_File LIKE ?', (currTime, fdur[1], fsize, 'Yes', fdur[2], \
+                    target,))
             else:
+                db.execute('UPDATE mTrailers SET lastchecked=?, tr_resol=?, tr_size=?, trStatus=?,     \
+                trDuration=? WHERE extras_File LIKE ?', (currTime, 2, 2, 'Missing', 2, target,))
                 mgenlog = 'Trailer file not found for duration checking: ' + newname
                 genLog(mgenlog)
             checkcount += 1
+            if checkcount % 100 == 0:
+                print('Files checked: ' + str(checkcount)) 
         db.commit()
         db.close()
         if ccount == 0:                               # Display ending message if not called by checkFinish
@@ -984,6 +1011,10 @@ def displayStats(sysarg1):                                   # Display statistic
             longtuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (*) from mTrailers WHERE trstatus LIKE ?', ('%Yes%',))
             chktuple = dqcurr.fetchone()
+            dqcurr = db.execute('SELECT count (*) from mTrailers WHERE trstatus LIKE ?', ('%Invalid%',))
+            invtuple = dqcurr.fetchone()
+            dqcurr = db.execute('SELECT count (*) from mTrailers WHERE trstatus LIKE ?', ('%Missing%',))
+            mistuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (*) from mTrailers WHERE trstatus IS NULL')
             nulltuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (DISTINCT extras_FileID) from mTrailers')
@@ -1000,6 +1031,8 @@ def displayStats(sysarg1):                                   # Display statistic
             print ("Mezzmo You Tube trailers: \t\t" + str(youtuple[0]))
             print ("Mezzmo bad trailers: \t\t\t" + str(badtuple[0]))
             print ("Mezzmo long trailers: \t\t\t" + str(longtuple[0]))
+            print ("Mezzmo invalid name trailers: \t\t" + str(invtuple[0]))
+            print ("Mezzmo trailer file missing: \t\t" + str(mistuple[0]))
             print ("\nMezzmo trailers fetched: \t\t" + str(chktuple[0]))
             print ("Mezzmo traielrs not fetched: \t\t" + str(nulltuple[0]))
             print ("\n\n")
