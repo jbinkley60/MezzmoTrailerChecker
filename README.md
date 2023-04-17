@@ -21,6 +21,7 @@ A utility to help you manage your Mezzmo local trailer files.
 - Option to prefer official trailers
 - Option for only local trailers
 - Check feature to update trailer size, resolution and duration after manual trailer changes
+- Added checks for missing trailer files and trailer files with invalid names
 - Full detailed logfile
 - Full Trailer checker statistics
 <br/>
@@ -36,8 +37,8 @@ A utility to help you manage your Mezzmo local trailer files.
    See optional command line arguments below.    
 -  Recommended usage sequence is:
    - run trailer_checker.py sync
-   - run trailer_checker.py trailer or
-   - run trailer_checker.py new
+   - run trailer_checker.py trailer
+   - run trailer_checker.py check
    - run trailer_checker.py csv trailer
    - review CSV file which has a complete listing of Mezzmo trailers 
 
