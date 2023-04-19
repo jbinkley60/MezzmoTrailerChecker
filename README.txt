@@ -1,3 +1,15 @@
+v0.0.4
+
+-  Fixed minor bug where official trailers weren't always put at the top of the list 
+   when preferred official was set in the settings.
+-  Fixed minor bug which was causing some of the bad trailer statuses to be overwritten
+   to good during trailer check by movie function.
+-  Fixed minor bug which would cause Bad trailers to be readded to Mezzmo
+-  Major performance improvement over version 0.0.3 when syncing with Mezzmo by modifying
+   the trailer checker database indexes.
+-  Added "show" command to provide a screen display of all trailers with errors. The 
+   status for all trailers can be seen with the "csv trailer" command.
+
 v0.0.3 4/17/2023
 
 -  Fixed bug with unicode characters in ffmpeg output file when calculating duration

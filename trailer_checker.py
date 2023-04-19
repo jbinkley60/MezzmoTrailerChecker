@@ -14,7 +14,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.3'
+version = 'version 0.0.4'
 
 sysarg1 = ''
 sysarg2 = ''
@@ -159,7 +159,7 @@ def getConfig():
 
 def checkCommands(sysarg1, sysarg2):                                   # Check for valid commands
    
-    if len(sysarg1) > 1 and sysarg1.lower() not in ['trailer', 'csv', 'sync', 'help', 'check', 'stats']:
+    if len(sysarg1) > 1 and sysarg1.lower() not in ['trailer', 'csv', 'sync', 'help', 'check', 'stats', 'show']:
         displayHelp()
         exit()
     if 'help' in sysarg1.lower():
@@ -180,6 +180,7 @@ def displayHelp():                                 #  Command line help menu dis
         print('\ncheck\t\t - Updates missing trailer duration, size or resolution information in the Checker database')
         print('\ncheck new\t - Updates and overwrites trailer duration, size and resolution fields in Checker database')
         print('\nstats\t\t - Generates summary statistics for trailers')
+        print('\nstats\t\t - Generates a listing of all Mezzmo trailers with an error status')
         print('\n=========================================================================================')
         print('\n ')
 
@@ -203,21 +204,19 @@ def getMezzmoTrailers(sysarg1= ''):                                     #  Query
             dbtuples = dbcurr.fetchall()     
             del dbcurr
             for a in range(len(dbtuples)):
-                #curp = trdb.execute('SELECT extras_ID, extras_FileID FROM mTrailers WHERE extras_ID=? AND    \
-                #extras_FileID=?', (dbtuples[a][1], dbtuples[a][2],))   #  Check Trailers
                 curp = trdb.execute('SELECT extras_ID, extras_FileID FROM mTrailers WHERE extras_File=?',     \
                 (dbtuples[a][4],))                                     #  Check Trailers
                 currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')                
                 trailertuple = curp.fetchone()
                 if not trailertuple:                                   #  Add to trailer database
-                    trdb.execute('INSERT or REPLACE into mTrailers (dateAdded, mgofile_file, extras_ID,       \
-                    extras_FileID, extras_TypeUID, extras_File, mgofile_lock, mgofile_title) values           \
+                    trdb.execute('INSERT into mTrailers (dateAdded, mgofile_file, extras_ID, extras_FileID,   \
+                    extras_TypeUID, extras_File, mgofile_lock, mgofile_title) values           \
                     (?, ?, ?, ?, ?, ?, ?, ?)',  (currTime, dbtuples[a][0], dbtuples[a][1], dbtuples[a][2],    \
                     dbtuples[a][3], dbtuples[a][4], dbtuples[a][5], dbtuples[a][6],))
                 else:                                                  #  Update trailer database
-                    trdb.execute('UPDATE mTrailers SET extras_File=?, mgofile_lock=?, mgofile_title =? WHERE  \
-                    extras_ID=? AND extras_FileID=?', (dbtuples[a][4], dbtuples[a][5], dbtuples[a][6],        \
-                    dbtuples[a][1], dbtuples[a][2],))
+                    trdb.execute('UPDATE mTrailers SET extras_File=?, mgofile_lock=?, mgofile_title=?,        \
+                    extras_ID=?, extras_FileID=? WHERE extras_File=?', (dbtuples[a][4], dbtuples[a][5],       \
+                    dbtuples[a][6], dbtuples[a][1], dbtuples[a][2], dbtuples[a][4],))
             trdb.commit()
             trdb.close()
             db.close()
@@ -253,10 +252,12 @@ def checkDatabase():
         mgofile_file INTEGER, extras_ID  INTEGER, extras_FileID INTEGER, extras_TypeUID TEXT,         \
         extras_File TEXT, mgofile_lock INTEGER, lastchecked TEXT, tr_resol INTEGER, tr_size INTEGER,  \
         trStatus TEXT, trDuration INTEGER, var1 TEXT, var2 TEXT, var3 TEXT, var4 TEXT)')
-        db.execute('CREATE UNIQUE INDEX IF NOT EXISTS trailer_1 ON mTrailers (extras_ID, extras_FileID)')
+        db.execute('DROP INDEX IF EXISTS trailer_1')    # Remove old unique index
+        db.execute('CREATE INDEX IF NOT EXISTS trailer_5 ON mTrailers (extras_ID, extras_FileID)')
         db.execute('CREATE INDEX IF NOT EXISTS trailer_2 ON mTrailers (mgofile_file)')
         db.execute('CREATE INDEX IF NOT EXISTS trailer_3 ON mTrailers (dateAdded)')
         db.execute('CREATE INDEX IF NOT EXISTS trailer_4 ON mTrailers (trStatus)')
+
 
         db.execute('CREATE table IF NOT EXISTS mHistory (dateAdded TEXT, mgofile_title TEXT,          \
         mgofile_file INTEGER, extras_ID  INTEGER, extras_FileID INTEGER, extras_TypeUID TEXT,         \
@@ -268,7 +269,8 @@ def checkDatabase():
         extras_FileNew TEXT, mgofile_lock INTEGER, tr_size INTEGER, tr_resol INTEGER,                \
         trDuration INTEGER, trMatch TEXT, var1 TEXT, var2 TEXT, var3 TEXT, var4 TEXT)')
         db.execute('CREATE INDEX IF NOT EXISTS trailer_11 ON mTemp (extras_FileID)')
-        db.execute('DELETE FROM mTemp')              # Clear temp table on startup
+        db.execute('CREATE INDEX IF NOT EXISTS trailer_12 ON mTrailers (extras_File)')
+        db.execute('DELETE FROM mTemp')                                    # Clear temp table on startup
 
         db.commit()
         db.close()
@@ -337,8 +339,8 @@ def getMovieList(sysarg1= '', sysarg2= ''):                               # Get 
                 totcount += 1
                 if int(counttuple[0]) > 0:                                # Update lastchecked and status
                     currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    db.execute('UPDATE mTrailers SET lastchecked=?, trStatus=? WHERE extras_FileID=?',  \
-                    (currTime, 'Yes', trailer[0],))
+                    db.execute('UPDATE mTrailers SET lastchecked=?, trStatus=? WHERE extras_FileID=? AND \
+                    trStatus IS NULL', (currTime, 'Yes', trailer[0],))
                     db.commit()
                     mgenlog = "Skipping movie, local trailers found: " + trailer[1]
                     genLog(mgenlog)
@@ -357,6 +359,7 @@ def getMovieList(sysarg1= '', sysarg2= ''):                               # Get 
                     db.commit()   
                     for ytube in chktuple:                                # Get local trailers
                         trinfo = getTrailer(ytube[3])
+                        #print('trinfo is: ' + str(trinfo))
                         if trinfo[0] == 0 and int(trinfo[4]) <= maxdur:   # Trailer fetched and not too long
                             mgenlog = 'Trailer file fetched: ' + trinfo[3] + ' - ' + trinfo[2] + ' - ' + trinfo[1] 
                             genLog(mgenlog)
@@ -367,7 +370,12 @@ def getMovieList(sysarg1= '', sysarg2= ''):                               # Get 
                         elif trinfo[0] == 0 and int(trinfo[4]) > maxdur:  # Trailer fetched and too long
                             updateError(ytube[3], db, 'Long')
                             updateHistory(trinfo, ytube[3], db)           # Save trailer info to history
-                            longcount += 1                                # Increment long trailer counter                             
+                            longcount += 1                                # Increment long trailer counter                                                  elif 'error' in str(trinfo).lower():
+                            updateError(ytube[3], db, 'Bad')
+                            mgenlog = 'There was an error fetching the local trailer for: ' + ytube[3]
+                            genLog(mgenlog)
+                            print(mgenlog)
+                            bdcount += 1   
                         else:                                             # Error fetching You Tube trailer
                             updateError(ytube[3], db, 'Bad')
                             mgenlog = 'There was an error fetching the local trailer for: ' + ytube[3]
@@ -391,11 +399,10 @@ def getMovieList(sysarg1= '', sysarg2= ''):                               # Get 
 
 
 def updateError(trurl, db, status):                                        # Update status download error
-
-        global bdcount      
+ 
         currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        db.execute('UPDATE mTrailers SET lastchecked=?, trStatus=? WHERE extras_File=?',  \
-        (currTime, status, trurl,))
+        db.execute('UPDATE mTrailers SET lastchecked=?, trStatus=?, tr_resol=?, tr_size=?, trDuration=?      \
+        WHERE extras_File=?',  (currTime, status, 1,1,1,trurl,))
         db.commit()
 
 
@@ -420,11 +427,13 @@ def updateMezzmo(fileID, db):                                             # Upda
         obsize = tr_config['obsize'].lower()
         onlylt = tr_config['onlylt'].lower()
         trcount = tr_config['trcount']
-        ofperf = tr_config['ofperf']
+        ofperf = tr_config['ofperf'].lower()
         mezzdb = openMezDB()
-        trcurr = db.execute('SELECT * FROM mTrailers WHERE extras_FileID = ? LIMIT ?', (fileID, trcount))
+        trcurr = db.execute('SELECT * FROM mTrailers WHERE extras_FileID=? AND (trStatus LIKE ? OR trStatus \
+        IS NULL) LIMIT ?',  (fileID, 'Yes', trcount,))
         trtuple = trcurr.fetchall()                                       # Get current trailer records
         print('The # of old trailers for: ' + str(fileID) + ' is: ' + str(len(trtuple)))
+        #print(str(trtuple))
         if 'yes' in ofperf and 'yes' in obsize:                           # If prefer official and by size
             tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew LIKE ? ORDER BY tr_size DESC',  \
             ('%official%',))
@@ -432,15 +441,15 @@ def updateMezzmo(fileID, db):                                             # Upda
             tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew NOT LIKE ? ORDER BY tr_size     \
             DESC', ('%official%',))
             temptuple1 = tempcurr.fetchall()
-            temptuple = temtuple0 + temptuple1 
+            temptuple = temptuple0 + temptuple1
         elif 'yes' in ofperf and 'no' in obsize:                          # If prefer official and by resolution
             tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew LIKE ? ORDER BY tr_resol DESC',  \
             ('%official%',))
             temptuple0 = tempcurr.fetchall()  
-            tempcurr1 = db.execute('SELECT * FROM mTemp WHERE extras_fileNew NOT LIKE ? ORDER BY tr_resol    \
-            DESC', ('%official%',))
+            tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew NOT LIKE ? ORDER BY tr_resol     \
+            DESC', ('%official%',)) 
             temptuple1 = tempcurr.fetchall()
-            temptuple = temtuple0 + temptuple1                              
+            temptuple = temptuple0 + temptuple1                              
         elif 'no' in ofperf and 'yes' in obsize:                          # If prefer by size
             tempcurr = db.execute('SELECT * FROM mTemp ORDER BY tr_size DESC')
             temptuple = tempcurr.fetchall()            
@@ -576,6 +585,7 @@ def openMezDB():
         from pysqlite2 import dbapi2 as sqlite
                        
     db = sqlite.connect(dbfile)
+    db.execute("""pragma journal_mode=wal;""")
 
     return db
 
@@ -950,8 +960,7 @@ def checkFinish(sysarg1):                                    # Successfully fini
 
     if sysarg1.lower() in ['trailer']:                       # Sync trailer db to Mezzmo
         getMezzmoTrailers('sync')
-        checkFiles('check', '', gdcount)
-    #if not sysarg1.lower() in ['check']:        
+        checkFiles('check', '', gdcount)      
     mgenlog = 'Mezzmo Trailer Checker completed successfully.'
     print(mgenlog)
     genLog(mgenlog)
@@ -976,7 +985,40 @@ def getTotals():                                             # Gets checked down
         print (e)
         mgenlog = 'An error occurred generating totals.'
         genLog(mgenlog)
-        pring(mgenlog)
+        print(mgenlog)
+
+
+def showErrors(sysarg1= '', sysarg2= ''):                     # Show movies with bad statuses
+
+    try:
+        if sysarg1.lower() not in ['show']:                   # Must be a valid command
+            return
+
+        db = openTrailerDB()
+        dbcurr = db.execute('SELECT * from mTrailers WHERE trStatus NOT LIKE ? AND trStatus IS \
+        NOT NULL ORDER BY extras_FileID, extras_ID', ('%Yes%',))
+        showtuples = dbcurr.fetchall()
+
+        if len(showtuples) > 0:
+            print('\n\n Movie # \tTrailer # \tStatus \t\t\t    Movie Title \n')
+            for show in showtuples:
+                print(str(show[4]) + '\t\t' + str(show[3]) + '\t\t' + show[11] + '\t\t' + show[1])
+            print('\n\n\n')
+            mgenlog = 'There were ' + str(len(showtuples)) + ' displayed with errors'
+            genLog(mgenlog)
+        else:
+            mgenlog = 'There were no movies found with errors'
+            genLog(mgenlog)
+            print(mgenlog)
+        db.close()       
+
+
+    except Exception as e:
+        print (e)
+        mgenlog = 'An error occurred showign abd movies.'
+        genLog(mgenlog)
+        print(mgenlog)
+
 
 
 def displayStats(sysarg1):                                   # Display statistics    
@@ -1047,5 +1089,6 @@ getMovieList(sysarg1, sysarg2)                               # Get list of movie
 checkCsv(sysarg1, sysarg2)
 checkFiles(sysarg1, sysarg2)
 checkFinish(sysarg1)
+showErrors(sysarg1, sysarg2)
 
 
