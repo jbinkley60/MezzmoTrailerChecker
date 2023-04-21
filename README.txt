@@ -1,4 +1,16 @@
-v0.0.4
+v0.0.5 4/21/2023
+
+-  Added # of files and storage consumed by the trailer folder to the stats output.
+-  Fixed another minor bug which was causing Long and Invalid statuses to be changed
+   to bad in the mTrailer table.
+-  Fixed issue where after trimming extraneous You Tube characters in local trailer
+   names, a duplicate trailer name might exist. 
+-  Added the ability to delete trailers from the Mezzmo Trailer Checker database by
+   movie name or number.  This is useful when you want to update trailers in Mezzmo
+   and have the tracker learn/check them again.
+-  Added backup command to create backups of the Mezzmo Trailer Checker database    
+ 
+v0.0.4 4/19/2023
 
 -  Fixed minor bug where official trailers weren't always put at the top of the list 
    when preferred official was set in the settings.

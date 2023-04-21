@@ -14,16 +14,20 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.4'
+version = 'version 0.0.5'
 
-sysarg1 = ''
-sysarg2 = ''
+sysarg1 = sysarg2 = sysarg3 = ''
+
 if len(sys.argv) == 2:
     sysarg1 = sys.argv[1]
 if len(sys.argv) == 3:
     sysarg1 = sys.argv[1]   
     sysarg2 = sys.argv[2]
 
+if len(sys.argv) == 4:
+    sysarg1 = sys.argv[1]   
+    sysarg2 = sys.argv[2]
+    sysarg3 = sys.argv[3]
 
 def getConfig():
 
@@ -159,7 +163,8 @@ def getConfig():
 
 def checkCommands(sysarg1, sysarg2):                                   # Check for valid commands
    
-    if len(sysarg1) > 1 and sysarg1.lower() not in ['trailer', 'csv', 'sync', 'help', 'check', 'stats', 'show']:
+    if len(sysarg1) > 1 and sysarg1.lower() not in ['trailer', 'csv', 'sync', 'help', 'check', 'stats',   \
+        'show', 'clean', 'backup']:
         displayHelp()
         exit()
     if 'help' in sysarg1.lower():
@@ -169,8 +174,8 @@ def checkCommands(sysarg1, sysarg2):                                   # Check f
 
 def displayHelp():                                 #  Command line help menu display
 
-        print('\n=========================================================================================')
-        print('\nThe only valid commands are -  trailer, sync, csv, check, stats and help  ')
+        print('\n=====================================================================================================')
+        print('\nThe only valid commands are -  trailer, sync, csv, check, stats, show, clean, backup and help  ')
         print('\nExample:  trailer_checker.py trailer')      
         print('\ntrailer\t\t - Runs the trailer checker normally starting with the first movie in the Mezzmo database.')
         print('\ntrailer new\t - Runs the trailer checker normally starting with the newest movie in the Mezzmo database.')
@@ -180,8 +185,13 @@ def displayHelp():                                 #  Command line help menu dis
         print('\ncheck\t\t - Updates missing trailer duration, size or resolution information in the Checker database')
         print('\ncheck new\t - Updates and overwrites trailer duration, size and resolution fields in Checker database')
         print('\nstats\t\t - Generates summary statistics for trailers')
-        print('\nstats\t\t - Generates a listing of all Mezzmo trailers with an error status')
-        print('\n=========================================================================================')
+        print('\nshow\t\t - Generates a listing of all Mezzmo trailers with an error status')
+        print('\nshow  name\t - Displays trailer information for movie name (i.e. show name "Christmas Vacation" )')
+        print('\nshow number\t - Displays trailer information for movie number (i.e. show number 1215) ')
+        print('\nclean name\t - Clears trailer trailer information for movie name (i.e. clean name "Christmas Vacation" )')
+        print('\nclean number\t - Clears trailer database information for movie number (i.e. clean number 1215) ')
+        print('\nbackup\t\t - Creates a time stamped file name backup of the Mezzmo Trailer Checker database')
+        print('\n=====================================================================================================')
         print('\n ')
 
 
@@ -347,9 +357,12 @@ def getMovieList(sysarg1= '', sysarg2= ''):                               # Get 
                     print(mgenlog)
                     skipcount += 1
                 else:                                                     # Get list of Youtube trailers
-                    chcurr = db.execute('SELECT extras_FileID, mgofile_title, extras_ID, extras_File from  \
-                    mTrailers WHERE extras_File like ? AND extras_FileID=? AND (trStatus NOT LIKE ? OR     \
-                    trStatus IS NULL) Limit ? ', (ymatch, trailer[0], '%Bad%', trlimit,)) # Get trailer list to check
+                    #chcurr = db.execute('SELECT extras_FileID, mgofile_title, extras_ID, extras_File from  \
+                    #mTrailers WHERE extras_File like ? AND extras_FileID=? AND (trStatus NOT LIKE ? OR     \
+                    #trStatus IS NULL) Limit ? ', (ymatch, trailer[0], '%Bad%', trlimit,)) # Get trailer list to check
+                    chcurr = db.execute('SELECT extras_FileID, mgofile_title, extras_ID, extras_File from   \
+                    mTrailers WHERE extras_File like ? AND extras_FileID=? AND trStatus IS NULL Limit ? ',  \
+                    (ymatch, trailer[0], trlimit,))                       # Get trailer list to check
                     chktuple = chcurr.fetchall()
                     mgenlog = 'Found ' + str(len(chktuple)) + ' Youtube trailers: ' + trailer[1]
                     print(mgenlog)
@@ -370,15 +383,16 @@ def getMovieList(sysarg1= '', sysarg2= ''):                               # Get 
                         elif trinfo[0] == 0 and int(trinfo[4]) > maxdur:  # Trailer fetched and too long
                             updateError(ytube[3], db, 'Long')
                             updateHistory(trinfo, ytube[3], db)           # Save trailer info to history
-                            longcount += 1                                # Increment long trailer counter                                                  elif 'error' in str(trinfo).lower():
+                            longcount += 1                                # Increment long trailer counter
+                        elif 'error' in str(trinfo).lower():
                             updateError(ytube[3], db, 'Bad')
-                            mgenlog = 'There was an error fetching the local trailer for: ' + ytube[3]
+                            mgenlog = 'There was an error1 fetching the local trailer for: ' + ytube[3]
                             genLog(mgenlog)
                             print(mgenlog)
                             bdcount += 1   
                         else:                                             # Error fetching You Tube trailer
                             updateError(ytube[3], db, 'Bad')
-                            mgenlog = 'There was an error fetching the local trailer for: ' + ytube[3]
+                            mgenlog = 'There was an error2 fetching the local trailer for: ' + ytube[3]
                             genLog(mgenlog)
                             print(mgenlog)
                             bdcount += 1                                  # Increment bad counter
@@ -739,6 +753,8 @@ def checkFolders():                                # Check folders and files
             os.makedirs('temp')
         command = 'del temp\*.mp4 >nul 2>nul'      #  Delete temp files if exist 
         os.system(command)                         #  Clear temp files
+        if not os.path.exists('backups'):          #  Check backup files location
+            os.makedirs('backups')
         if not os.path.exists(trailerloc):         #  Check trailer files location
             mgenlog = 'Local trailer file location does not exist.  Mezzmo Trailer Checker exiting.'  
             genLog(mgenlog)
@@ -799,7 +815,7 @@ def checkFiles(sysarg1 = '', sysarg2 = '', ccount = 0): # Check size, resolution
         dbtuple = dbcurr.fetchall()                   # Get entries with missing info
 
         if len(dbtuple) == 0:                         # All files updated
-            mgenlog = 'There were no files found which need checking.'
+            mgenlog = 'There were no trailers found which need checking.'
             genLog(mgenlog)
             print(mgenlog)
             db.close 
@@ -868,6 +884,12 @@ def renameFiles():                                  # Rename trailer file names 
                    newname = newname[:rpos - 1]  + ".mp4"
                 else:
                    newname = newname  + ".mp4"
+                checkname = 'temp\\' + newname
+                if os.path.isfile(checkname):       # Ensure local trailer name is not a dupe
+                    newname = newname[:len(newname)-4] + '_.mp4'
+                    mgenlog = 'Duplicate trailer name found. Trailer name appended: ' + newname
+                    genLog(mgenlog)
+                    print(mgenlog) 
                 command = "rename " + '"' + x + '" "' + newname + '"'
                 os.system(command)                  # Rename trailer file to trimmed newname
                 hres, vres, duration = getDuration(newname)
@@ -894,7 +916,7 @@ def moveTrailers():                                 # Move trailers to trailer l
         os.system(command)
     except Exception as e:
         print (e)
-        mgenlog = 'There was a problem moving trailers to teh trailer folder.'
+        mgenlog = 'There was a problem moving trailers to the trailer folder.'
         genLog(mgenlog)
         print(mgenlog)
 
@@ -994,6 +1016,9 @@ def showErrors(sysarg1= '', sysarg2= ''):                     # Show movies with
         if sysarg1.lower() not in ['show']:                   # Must be a valid command
             return
 
+        if len(sysarg2) > 0:                                  # return for files
+            return
+
         db = openTrailerDB()
         dbcurr = db.execute('SELECT * from mTrailers WHERE trStatus NOT LIKE ? AND trStatus IS \
         NOT NULL ORDER BY extras_FileID, extras_ID', ('%Yes%',))
@@ -1015,15 +1040,108 @@ def showErrors(sysarg1= '', sysarg2= ''):                     # Show movies with
 
     except Exception as e:
         print (e)
-        mgenlog = 'An error occurred showign abd movies.'
+        mgenlog = 'An error occurred showing bad movies.'
         genLog(mgenlog)
         print(mgenlog)
 
 
+def makeBackups():                                   # Make database backups
+
+    try:
+        from sqlite3 import dbapi2 as sqlite
+    except:
+        from pysqlite2 import dbapi2 as sqlite
+    
+    try:
+        if sysarg1.lower() not in 'backup':
+            return
+        DB = 'backups/mezzmo_trailers_' + datetime.now().strftime('%m%d%Y-%H%M%S') + '_.db'
+        dbout = sqlite.connect(DB)
+        dbin = openTrailerDB()
+
+        with dbout:
+            dbin.backup(dbout, pages=100)
+        dbout.close()
+        dbin.close()
+        mgenlog = 'Mezzmo Trailer Checker backup successful: ' + str(DB)
+        genLog(mgenlog)
+        print(mgenlog) 
+
+    except Exception as e:
+        print (e)
+        mgenlog = 'An error occurred creating a Mezzmo Trailer Checker backup.'
+        genLog(mgenlog)
+        print(mgenlog)      
+
+                                  
+
+def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie trailers from DB
+
+        if sysarg1.lower() not in ['show', 'clean'] or  sysarg2.lower() not in ['name', 'number']: 
+            return
+        elif sysarg2.lower() in ['name', 'number'] and len(sysarg3) == 0:
+           print('A movie name or movie number is required.')
+
+        if sysarg2.lower() in 'number':
+            db = openTrailerDB()
+            dbcurr = db.execute('SELECT * from mTrailers WHERE extras_FileID=? ORDER BY \
+            extras_FileID, extras_ID', (sysarg3,))
+            dbtuples = dbcurr.fetchall() 
+            if len(dbtuples) == 0:
+                mgenlog = 'No trailers found with movie number: ' + str(sysarg3)
+                genLog
+                print(mgenlog)
+                db.close()
+                return
+
+        if sysarg2.lower() in 'name':
+            db = openTrailerDB()
+            dbcurr = db.execute('SELECT * from mTrailers WHERE mgofile_title=?    \
+            ORDER BY mgofile_title, extras_ID', (sysarg3,))
+            dbtuples = dbcurr.fetchall() 
+            if len(dbtuples) == 0:
+                mgenlog = 'No trailers found with movie name: ' + str(sysarg3)
+                genLog
+                print(mgenlog)
+                db.close()
+                return
+
+        print('The number of trailers found: ' + str(len(dbtuples)))
+        print('\n\n Movie #   Trailer # \tStatus\t\tMovie Title    \t\t\t Trailer File\n')
+        for trailer in dbtuples:
+            status = '   '
+            if trailer[11] != None:
+                status = trailer[11]
+            print(str(trailer[4]) + '\t\t' + str(trailer[3]) + '\t' + status + '\t' \
+            + trailer[1][:36] + '\t' + trailer[6])
+        print('\n\n\n')
+
+        if 'clean' in sysarg1.lower():                       # Do you want to delete ?
+            choice = input('Do you want to delete these trailers (Y/N) ?  They will be rebuilt from Mezzmo\n')
+            if 'n' in choice.lower():
+                mgenlog = 'Trailers will not be cleaned for: ' + str(sysarg3)
+                genLog
+                print(mgenlog)                
+                db.close()
+                return 
+
+        if sysarg2.lower() in 'number':
+            db.execute('DELETE from mTrailers WHERE extras_FileID=?', (sysarg3,))
+            db.commit()
+        if sysarg2.lower() in 'nname':
+            dbcurr = db.execute('DELETE from mTrailers WHERE mgofile_title=?', (sysarg3,))
+            db.commit()
+        db.close()
+        mgenlog = 'Trailers successfully cleaned for movie: ' + str(sysarg3)
+        genLog(mgenlog)
+        print(mgenlog)
+        
 
 def displayStats(sysarg1):                                   # Display statistics    
 
         global totcount, bdcount, gdcount, mvcount, skipcount, trlcount, longcount
+        global tr_config
+        trailerloc = tr_config['ltrailerloc']
 
         print ('\n\n\t ************  Mezzmo Trailer Checker Stats  *************\n')
 
@@ -1049,7 +1167,7 @@ def displayStats(sysarg1):                                   # Display statistic
             youtuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (*) from mTrailers WHERE trstatus LIKE ?', ('%Bad%',))
             badtuple = dqcurr.fetchone()
-            dqcurr = db.execute('SELECT count (*) from mHistory WHERE trstatus LIKE ?', ('%Long%',))
+            dqcurr = db.execute('SELECT count (*) from mTrailers WHERE trstatus LIKE ?', ('%Long%',))
             longtuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (*) from mTrailers WHERE trstatus LIKE ?', ('%Yes%',))
             chktuple = dqcurr.fetchone()
@@ -1061,9 +1179,14 @@ def displayStats(sysarg1):                                   # Display statistic
             nulltuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (DISTINCT extras_FileID) from mTrailers')
             movtuple = dqcurr.fetchone()
-            dqcurr = db.execute('SELECT count (DISTINCT extras_FileID) from mTrailers WHERE trstatus IS NULL')
+            dqcurr = db.execute('SELECT count (DISTINCT extras_FileID) from mTrailers WHERE trStatus IS NULL')
             nullmvtuple = dqcurr.fetchone()
             db.close()
+            foldersize = filecount = 0
+            for element in os.scandir(trailerloc):
+                foldersize+=os.stat(element).st_size
+                filecount += 1
+            storagegb = round((float(foldersize) / 1073741824),2) 
             print ("\nTrailers fetched today: \t\t" + str(daytotal))
             print ("Trailers fetched total: \t\t" + str(grandtotal))
             print ("\nTotal Movies with trailers: \t\t" + str(movtuple[0]))
@@ -1075,6 +1198,8 @@ def displayStats(sysarg1):                                   # Display statistic
             print ("Mezzmo long trailers: \t\t\t" + str(longtuple[0]))
             print ("Mezzmo invalid name trailers: \t\t" + str(invtuple[0]))
             print ("Mezzmo trailer file missing: \t\t" + str(mistuple[0]))
+            print ("\nLocal trailer files in folder: \t\t" + str(filecount))
+            print ("Total size of local trailers: \t\t" + str(storagegb) + 'GB')
             print ("\nMezzmo trailers fetched: \t\t" + str(chktuple[0]))
             print ("Mezzmo traielrs not fetched: \t\t" + str(nulltuple[0]))
             print ("\n\n")
@@ -1088,6 +1213,8 @@ getMezzmoTrailers(sysarg1)                                   # Load Mezzmo trail
 getMovieList(sysarg1, sysarg2)                               # Get list of movies to check and get trailers
 checkCsv(sysarg1, sysarg2)
 checkFiles(sysarg1, sysarg2)
+cleanTrailers(sysarg1, sysarg2, sysarg3)
+makeBackups()
 checkFinish(sysarg1)
 showErrors(sysarg1, sysarg2)
 
