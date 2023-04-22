@@ -1,3 +1,11 @@
+v0.0.6 4/22/2023
+
+-  Added detection for trailer files where the video stream is missing or the 
+   resolution cannot properly be determined by ffmpeg.
+-  Fixed minor bug which could cause a movie file viewed with "show name" to 
+   have it also cleaned from the Mezzmo Trailer Checker database.
+-  Added the ability to fetch specific movie trailers by name or number
+
 v0.0.5 4/21/2023
 
 -  Added # of files and storage consumed by the trailer folder to the stats output.

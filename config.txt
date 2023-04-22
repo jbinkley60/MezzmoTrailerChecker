@@ -1,8 +1,8 @@
 v:\mezzmo\	   	                        # Path to Mezzmo database
 u:\trailers\	                                # Local path to trailer location
 e:\trailers\                                    # Mezzmo path to trailer location  
-10	      		                        # Number of movies to fetch trailers (1-20)
-10						# Trailers per movie (1-20)
+10	      		                        # Number of movies to fetch trailers (1-20 recommended)
+10						# Trailers per movie (1-20 recommended)
 1080						# Max resolution (1080, 720 or 480)
 360						# Maximum duration of trailer to download in seconds (180-480 recommended)
 Yes				 		# Lock metadata in Mezzmo after completion

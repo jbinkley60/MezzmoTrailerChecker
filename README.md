@@ -5,10 +5,12 @@ A utility to help you manage your Mezzmo local trailer files.
 ## Features:
 
 - Read current You Tube movie trailer information from the Mezzmo database
+- Movie trailers can be fetched by newest, oldest, movie name or movie number
 - Track movies which have local trailers, which don't and last checked time
 - Download high quality trailers from You Tube for local playback
 - Fast You Tube download speeds with daily limit setting
-- Detect You Tube trailers which cannot be downloaded and marks them "Bad" 
+- Detect You Tube trailers which cannot be downloaded and marks them "Bad"
+- Automatically remove bad trailers from Mezzmo 
 - Automatically normalize and trim the You Tube trailers names
 - User selectable feature of 480P, 720P or 1080P quality trailers (if available, otherwise best quality available)
 - Option to set the maximum duration of trailers
@@ -48,7 +50,9 @@ A utility to help you manage your Mezzmo local trailer files.
 ## Command line arguments:  (Limit 1 at a time)
 
 - <b>trailer</b>	-  Runs the trailer checker normally starting with the first movie in the Mezzmo database. <br>
-- <b>trailer new</b>    -  Runs the trailer checker normally starting with the newest movie in the Mezzmo database.<br> 
+- <b>trailer new</b>    -  Runs the trailer checker normally starting with the newest movie in the Mezzmo database. <br>
+- <b>trailer name /b>   -  Runs trailer checker for movie name (i.e. trailer name "Christmas Vacation" ) <br>
+- <b>trailer number</b> -  Runs trailer checker for movie number (i.e. trailer number 1215)  <br> 
 - <b>sync</b>           -  Syncs the Mezzmo Trailer Checker to the Mezzmo database without fetching any trailers. <br> 
 - <b>csv trailer</b>    -  Creates a CSV file with the trailer information in the Mezzmo Trailer Checker<br> 
 - <b>csv history</b>    -  Creates a CSV file with the history information in the Mezzmo Trailer Checker<br>
@@ -56,10 +60,10 @@ A utility to help you manage your Mezzmo local trailer files.
 - <b>check new</b>	-  Updates and overwrites trailer duration, size and resolution fields in Checker database<br>
 - <b>stats</b>		-  Generates summary statistics for trailers<br>
 - <b>show</b>           -  Generates a listing of all Mezzmo trailers with an error status <br>                          
-- <b>show name "movie"</b>  -  Displays trailer information for movie name (i.e. show name "Christmas Vacation" ) <br>
-- <b>show number 1215</b>   -  Displays trailer information for movie number (i.e. show number 1215) <br>
-- <b>clean name "movie"</b> -  Clears trailer trailer information for movie name (i.e. clean name "Christmas Vacation" ) <br>
-- <b>clean number 1215</b>  -  Clears trailer database information for movie number (i.e. clean number 1215)  <br> 
+- <b>show name</b>      -  Displays trailer information for movie name (i.e. show name "Christmas Vacation" ) <br>
+- <b>show number</b>    -  Displays trailer information for movie number (i.e. show number 1215) <br>
+- <b>clean name</b>     -  Clears trailer trailer information for movie name (i.e. clean name "Christmas Vacation" ) <br>
+- <b>clean number</b>   -  Clears trailer database information for movie number (i.e. clean number 1215)  <br> 
 - <b>backup</b>         -  Creates a time stamped file name backup of the Mezzmo Trailer Checker database <br> 
           
          
