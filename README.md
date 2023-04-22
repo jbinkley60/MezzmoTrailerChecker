@@ -51,7 +51,7 @@ A utility to help you manage your Mezzmo local trailer files.
 
 - <b>trailer</b>	-  Runs the trailer checker normally starting with the first movie in the Mezzmo database. <br>
 - <b>trailer new</b>    -  Runs the trailer checker normally starting with the newest movie in the Mezzmo database. <br>
-- <b>trailer name /b>   -  Runs trailer checker for movie name (i.e. trailer name "Christmas Vacation" ) <br>
+- <b>trailer name</b>   -  Runs trailer checker for movie name (i.e. trailer name "Christmas Vacation" ) <br>
 - <b>trailer number</b> -  Runs trailer checker for movie number (i.e. trailer number 1215)  <br> 
 - <b>sync</b>           -  Syncs the Mezzmo Trailer Checker to the Mezzmo database without fetching any trailers. <br> 
 - <b>csv trailer</b>    -  Creates a CSV file with the trailer information in the Mezzmo Trailer Checker<br> 
