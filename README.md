@@ -26,7 +26,7 @@ A utility to help you manage your Mezzmo local trailer files.
 - Added checks for missing trailer files and trailer files with invalid names
 - Full detailed logfile
 - Full Trailer checker statistics
-- <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki/Mezzmo-Trailer-Checker-Data-Export">CSV export</a> of trailer information, checker history and movies in the Mezzmo Db without trailers.
+- <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki/Mezzmo-Trailer-Checker-Data-Export">CSV export</a> of trailer information, checker history and movies in the Mezzmo DB without trailers.
 - Command line backups of Mezzmo Trailer Checker database
 - User ability to clear trailer information by movie name or database number 
 <br/>
