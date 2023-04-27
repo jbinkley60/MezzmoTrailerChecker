@@ -1,3 +1,14 @@
+v0.0.7 4/27/2023
+
+-  Improved trailer file name dupe checking when a movie has many trailers with
+   the same name after trimming extraneous You Tube characters.
+-  Added average trailer file size calculation to the stats output
+-  Added "CSV notrail" command to generate a listing of all movies in the Mezzmo
+   database which have no trailers.
+-  Increased movies per fetch maximum to 50 per run and You Tube trailer fetches
+   per day to 400.
+-  Code cleanup and additional Python level error checking
+
 v0.0.6 4/22/2023
 
 -  Added detection for trailer files where the video stream is missing or the 

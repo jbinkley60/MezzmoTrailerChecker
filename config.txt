@@ -1,7 +1,7 @@
 v:\mezzmo\	   	                        # Path to Mezzmo database
 u:\trailers\	                                # Local path to trailer location
 e:\trailers\                                    # Mezzmo path to trailer location  
-10	      		                        # Number of movies to fetch trailers (1-20 recommended)
+10	      		                        # Number of movies to fetch trailers (1-20 recommended, 50 Max)
 10						# Trailers per movie (1-20 recommended)
 1080						# Max resolution (1080, 720 or 480)
 360						# Maximum duration of trailer to download in seconds (180-480 recommended)
@@ -12,4 +12,4 @@ No						# Order by size (largest trailers first) otherwise by highest resolution
 No						# Local trailers only
 logfile.txt					# Logfile
 500						# Number of movies during check (max 10000)
-200						# Daily You Tube download limit (recommended not to change)
+200						# Daily You Tube download limit (recommended not to change. 400 max)
