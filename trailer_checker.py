@@ -15,7 +15,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.7'
+version = 'version 0.0.8'
 
 sysarg1 = sysarg2 = sysarg3 = ''
 
@@ -97,7 +97,7 @@ def getConfig():
             datah = data.split('#')                                    # Remove comments
             obsize = datah[0].strip().rstrip("\n")                     # cleanup unwanted characters
         else:
-            obsize = 'No'                                             # Default to No
+            obsize = 'No'                                              # Default to No
 
         data = fileh.readline()                                        # Get Loal Trailers Only
         if data != '':
@@ -166,7 +166,7 @@ def checkCommands(sysarg1, sysarg2):                                   # Check f
    
     if len(sysarg1) > 1 and sysarg1.lower() not in ['trailer', 'csv', 'sync', 'help', 'check', 'stats',   \
         'show', 'clean', 'backup']:
-        displayHelp()
+        displayHelp(sysarg1)
         exit()
     if len(sysarg1) == 0 or 'help' in sysarg1.lower():
         displayHelp(sysarg1)
@@ -190,7 +190,7 @@ def displayHelp(sysarg1):                                 #  Command line help m
         print('check new\t - Updates and overwrites trailer duration, size and resolution fields in Checker database')
         print('\nstats\t\t - Generates summary statistics for trailers')
         print('\nshow\t\t - Generates a listing of all Mezzmo trailers with an error status')
-        print('show  name\t - Displays trailer information for movie name (i.e. show name "Christmas Vacation" )')
+        print('show name\t - Displays trailer information for movie name (i.e. show name "Christmas Vacation" )')
         print('show number\t - Displays trailer information for movie number (i.e. show number 1215) ')
         print('\nclean name\t - Clears trailer trailer information for movie name (i.e. clean name "Christmas Vacation" )')
         print('clean number\t - Clears trailer database information for movie number (i.e. clean number 1215) ')
@@ -859,7 +859,6 @@ def checkFolders():                                # Check folders and files
 
 def checkFiles(sysarg1 = '', sysarg2 = '', ccount = 0): # Check size, resolution and duration for trailers
 
-
     try:
         if sysarg1.lower() not in 'check':
             return
@@ -956,10 +955,13 @@ def renameFiles():                                  # Rename trailer file names 
                 fsize = filestat.st_size            # Get trailer size in bytes
                 rpos = x.find('[')
                 newname = x[:rpos - 1]
-                if rpos >= 0:                       # Trim extra characters
-                   newname = newname[:rpos - 1]  + ".mp4"
+                if rpos >= 10:                      # Trim extra characters
+                    newname = newname[:rpos - 1]  + ".mp4"
+                elif len(newname) < 10:
+                    tempname = ''.join(random.choices(string.ascii_letters, k=12))
+                    newname = "trailer_" + tempname + ".mp4"
                 else:
-                   newname = newname  + ".mp4"
+                    newname = newname  + ".mp4"
                 checkname = 'temp\\' + newname
                 dupe = checkDupe(newname)           # Check dupe in db
                 if os.path.isfile(checkname) or dupe > 0: # Ensure local trailer name is not a dupe

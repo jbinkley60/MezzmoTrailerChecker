@@ -1,3 +1,10 @@
+v0.0.8 5/4/2023
+
+-  Improved trailer file naming for You Tube trailers with very short names
+   filled with odd characters.
+-  Fixed command line error if the first argument was invalid.  Now the help
+   screen will appear vs. a Python error.
+
 v0.0.7 4/27/2023
 
 -  Improved trailer file name dupe checking when a movie has many trailers with
