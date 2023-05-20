@@ -21,7 +21,7 @@ A utility to help you manage your Mezzmo local trailer files.
 - Option to order trailers by size
 - Option for supporting prefer <a href="https://github.com/Conceiva/MezzmoKodiPlugin/wiki/Movie-Trailers#prefer-local-trailers">local trailer capability</a> to allow You Tube trailers for Mezzmo web interface
 - Option to <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki/Running-Mezzmo-Trailer-Checker#adjusting-trailers">automatically adjust</a> / standardize trailer frame rates
-- Option to a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki/Running-Mezzmo-Trailer-Checker#adjusting-trailers">automatically adjust</a> trailer audio level
+- Option to <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki/Running-Mezzmo-Trailer-Checker#adjusting-trailers">automatically adjust</a> trailer audio level
 - Option to prefer official trailers
 - Option for only local trailers
 - Check feature to update trailer size, resolution and duration after manual trailer changes
