@@ -15,9 +15,9 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.8'
+version = 'version 0.0.9'
 
-sysarg1 = sysarg2 = sysarg3 = ''
+sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
 if len(sys.argv) == 2:
     sysarg1 = sys.argv[1]
@@ -29,6 +29,12 @@ if len(sys.argv) == 4:
     sysarg1 = sys.argv[1]   
     sysarg2 = sys.argv[2]
     sysarg3 = sys.argv[3]
+ 
+if len(sys.argv) == 5:
+    sysarg1 = sys.argv[1]   
+    sysarg2 = sys.argv[2]
+    sysarg3 = sys.argv[3]
+    sysarg4 = sys.argv[4]
 
 def getConfig():
 
@@ -124,6 +130,27 @@ def getConfig():
         youlimit = datam[0].strip().rstrip("\n")                       # cleanup unwanted characters
         if int(youlimit) > 400:
             youlimit = 400                                             # Max daily downloads is 400
+
+        data = fileh.readline()                                        # Get trailer frame rate
+        if data != '':
+            datap = data.split('#')                                    # Remove comments
+            trfrate = datap[0].strip().rstrip("\n")                    # cleanup unwanted characters
+        else:
+            trfrate = '0'  
+
+        data = fileh.readline()                                        # Keep original trailer backup
+        if data != '':
+            dataq = data.split('#')                                    # Remove comments
+            trback = dataq[0].strip().rstrip("\n")                     # cleanup unwanted characters
+        else:
+            trback = 'No'                                              # Default to No
+
+        data = fileh.readline()                                        # Get audio level adjustment in %
+        datar = data.split('#')                                        # Remove comments
+        audiolvl = datar[0].strip().rstrip("\n")                       # cleanup unwanted characters
+        if int(audiolvl) > 200 or int(audiolvl) < 30:
+            audiolvl = '100'                                           # Min and max are 30% and 200#
+
         fileh.close()                                                  # close the file
         
         tr_config = {
@@ -142,10 +169,13 @@ def getConfig():
                      'logoutfile': logoutfile,
                      'maxcheck': maxcheck,
                      'youlimit': youlimit,
+                     'trfrate': trfrate,
+                     'trback': trback,
+                     'audiolvl': audiolvl,
                     }
 
         configuration = [mezzmodbfile, ltrailerloc, mtrailerloc, mfetchcount, trfetchcount]
-        configuration1 = [maxres, maxdur, mlock, mperf, ofperf, obsize, onlylt, logoutfile, maxcheck, youlimit]
+        configuration1 = [maxres, maxdur, mlock, mperf, ofperf, obsize, onlylt, logoutfile, maxcheck, youlimit, trfrate, trback]
         mgenlog = ("Mezzmo Trailer Checker started - " + version)
         print(mgenlog)
         genLog(mgenlog)
@@ -165,7 +195,7 @@ def getConfig():
 def checkCommands(sysarg1, sysarg2):                                   # Check for valid commands
    
     if len(sysarg1) > 1 and sysarg1.lower() not in ['trailer', 'csv', 'sync', 'help', 'check', 'stats',   \
-        'show', 'clean', 'backup']:
+        'show', 'clean', 'backup', 'adjust']:
         displayHelp(sysarg1)
         exit()
     if len(sysarg1) == 0 or 'help' in sysarg1.lower():
@@ -176,7 +206,7 @@ def checkCommands(sysarg1, sysarg2):                                   # Check f
 def displayHelp(sysarg1):                                 #  Command line help menu display
 
         print('\n=====================================================================================================')
-        print('\nThe only valid commands are -  trailer, sync, csv, check, stats, show, clean, backup and help  ')
+        print('\nThe only valid commands are -  trailer, sync, csv, check, stats, show, clean, backup, adjust and help  ')
         print('\nExample:  trailer_checker.py trailer')      
         print('\ntrailer\t\t - Runs the trailer checker normally starting with the first movie in the Mezzmo database')
         print('trailer new\t - Runs the trailer checker normally starting with the newest movie in the Mezzmo database')
@@ -188,7 +218,10 @@ def displayHelp(sysarg1):                                 #  Command line help m
         print('csv notrail\t - Creates a CSV file with a listing of all movies in the Mezzmo database with no trailers')
         print('\ncheck\t\t - Updates missing trailer duration, size or resolution information in the Checker database')
         print('check new\t - Updates and overwrites trailer duration, size and resolution fields in Checker database')
+        print('\nadjust frame\t - Adjust trailers by current frame rate (i.e. adjust frame 25)')
+        print('adjust number\t - Adjust trailers by movie number or range (i.e. adjust movie 1 or adjust movie 1 10)')
         print('\nstats\t\t - Generates summary statistics for trailers')
+        print('stats frame\t - Generates frame rate summary statistics for local trailers')
         print('\nshow\t\t - Generates a listing of all Mezzmo trailers with an error status')
         print('show name\t - Displays trailer information for movie name (i.e. show name "Christmas Vacation" )')
         print('show number\t - Displays trailer information for movie number (i.e. show number 1215) ')
@@ -738,7 +771,7 @@ def getFormats(trailer):                           # Get available You Tube Trai
         genLog(mgenlog) 
 
 
-def getDuration(trailerfile):                     # Get trailer duration from ffmpeg
+def getDuration(trailerfile, checktr=''):         # Get trailer duration from ffmpeg
 
     try:
 
@@ -754,6 +787,7 @@ def getDuration(trailerfile):                     # Get trailer duration from ff
         data = fileh.readlines()                   # Read file into data
         fileh.close()      
         found = 0
+        trfps_text = '0'
         for x in range(len(data)): 
             fpos = data[x].find('Duration')
             rpos = data[x].find('Video')
@@ -768,6 +802,15 @@ def getDuration(trailerfile):                     # Get trailer duration from ff
                 hres_text = dataa[1][len(dataa[1])-4:len(dataa[1])].strip()
                 found += 1       
                 #print(hres_text + ' ' + vres_text + ' ' + trailerfile)
+                fpspos = data[x].rfind('fps')      # Find fps 
+                if fpspos > 0:
+                    trfps_text = data[x][fpspos-6:fpspos-1].strip()
+                    if 's' in trfps_text:         # Whole number frame rate
+                       tempfps = trfps_text.split(' ')[1].strip()
+                       trfps_text = tempfps
+                    if trfps_text == '23.98':     # Adjust for You Tube format rounding
+                        trfps_text = '23.976'
+                    #print('The frame rate is: ' + trfps_text)
                 if int(vres_text) > 720 or int(hres_text) > 1280:
                     vres_text = 1080
                 elif  int(vres_text) > 480 or int(hres_text) > 720:
@@ -776,16 +819,20 @@ def getDuration(trailerfile):                     # Get trailer duration from ff
                     vres_text = 480
                 else:
                     vres_text = 360
-            #print('Length of file is: ' + str(len(data)) + ' ' + str(x) + ' ' + str(rpos) + ' ' + str(fpos) + ' ' + trailerfile)             
+            #print('Length of file is: ' + str(len(data)) + ' ' + str(x) + ' ' + str(rpos) + ' ' + str(fpos) + ' ' + trailerfile)
+        if trfps_text != '0':                        # Check for frame rate and audio adjustments
+            trfps_text = convertTrailer(trailerfile, trfps_text, checktr)             
 
         if found == 0: 
             duration = 0
             hres_text = '0'
             vres_text = '0'
+            trfps_text = '0'
         elif found == 1:
             hres_text = '0'
-            vres_text = '0'        
-        return (int(hres_text), int(vres_text), duration)
+            vres_text = '0'
+            trfps_text = '0'        
+        return (int(hres_text), int(vres_text), duration, trfps_text)
         #print(str(duration))
 
     except Exception as e:
@@ -794,6 +841,162 @@ def getDuration(trailerfile):                     # Get trailer duration from ff
         genLog(mgenlog)
         print(mgenlog)
         return (0,0,0)
+
+
+def convertTrailer(trailerfile, trfps, checktr=''):  # Adjust frame rate and audio level, if needed
+
+    try:
+        if 'check' in checktr.lower():
+            return trfps
+
+        global tr_config
+        trfrate = tr_config['trfrate']
+        trback = tr_config['trback']
+        ltrailerloc = tr_config['ltrailerloc']
+        audiolvl = tr_config['audiolvl']        
+
+        if trfrate == '0' and audiolvl == '100':                            # Frame rate and audio changes disabled
+            return trfps
+        elif (trfrate == trfps) and audiolvl == '100':                      # No changes needed
+            mgenlog = "No adjustments needed for: " + trailerfile
+            genLog(mgenlog)
+            print(mgenlog)
+            return trfps       
+        elif (trfrate != '0' and trfrate != trfps) or audiolvl == '100':    # Adjust frame rate only
+            #print('Frame rate mismatch for: ' + trfrate + ' ' + trfps + ' ' + trailerfile)
+            if 'yes' in trback.lower():
+                backuploc = os.path.join(ltrailerloc, "backup")
+                command = "copy " + trailerfile + " " + backuploc + " >nul 2>nul"
+                os.system(command)                  # Rename trailer file to trimmed newname                
+                mgenlog = 'Backup trailer successful: ' + trailerfile
+                genLog(mgenlog)
+                print(mgenlog)
+            frcommand = "ffmpeg -i " + trailerfile + " -filter:v fps=" + trfrate + " converted.mp4 >nul 2>nul"
+            #print(frcommand)
+            mgenlog = "Ajusting frame rate to " + trfrate + " for: " + trailerfile
+        elif trfrate != '0' and trfrate != trfps and audiolvl != '100':    # Adjust frame rate and audio
+            if 'yes' in trback.lower():
+                backuploc = os.path.join(ltrailerloc, "backup")
+                command = "copy " + trailerfile + " " + backuploc + " >nul 2>nul"
+                os.system(command)                  # Rename trailer file to trimmed newname                
+                mgenlog = 'Backup trailer successful: ' + trailerfile
+                genLog(mgenlog)
+                print(mgenlog)
+            volvl = str(float(audiolvl)/100)
+            frcommand = "ffmpeg -i " + trailerfile + " -filter:v fps=" + trfrate + "-filter:a volume=" + volvl \
+            + " converted.mp4 >nul 2>nul"
+            #print(frcommand)
+            mgenlog = "Ajusting frame rate and audio to " + trfrate + ":" + audiolvl + " for: " + trailerfile
+        elif (trfrate == '0' or trfrate == trfps) and audiolvl != '100':    # Adjust audio only
+            if 'yes' in trback.lower():
+                backuploc = os.path.join(ltrailerloc, "backup")
+                command = "copy " + trailerfile + " " + backuploc + " >nul 2>nul"
+                os.system(command)                  # Rename trailer file to trimmed newname                
+                mgenlog = 'Backup trailer successful: ' + trailerfile
+                genLog(mgenlog)
+                print(mgenlog)
+            volvl = str(float(audiolvl)/100)
+            frcommand = "ffmpeg -i " + trailerfile +  " -filter:a volume=" + volvl \
+            + " converted.mp4 >nul 2>nul"
+            #print(frcommand)
+            mgenlog = "Ajusting audio volume to " + audiolvl + " for: " + trailerfile
+
+        genLog(mgenlog)
+        print(mgenlog)
+        genLog(frcommand)
+        os.system(frcommand)
+        if ltrailerloc not in trailerfile:
+            copytrailer = os.path.join(ltrailerloc, trailerfile)
+        else:
+            copytrailer = trailerfile
+        mvcommand =  "copy converted.mp4 " + copytrailer + " /y >nul 2>nul"  
+        genLog(mvcommand)
+        os.system(mvcommand)
+
+        command = 'del *.mp4 /q >nul 2>nul'        #  Remove old converted files
+        os.system(command)                         #  Clear converted files
+
+        return trfrate
+
+    except Exception as e:
+        print (e)
+        mgenlog = "There was a problem converting the trailer: " + trailerurl
+        print(mgenlog)
+        genLog(mgenlog) 
+
+
+def adjustTrailer(sysarg1 = '', sysarg2 = '', sysarg3 = '', sysarg4 = ''):   # User adjusting of trailers
+
+    try:
+        if sysarg1.lower() not in 'adjust':
+            return
+        if len(sysarg2.lower()) > 0 and sysarg2.lower() not in ['number', 'frame']:
+            print('\nThe valid trailer adjust options are:  number and frame\n')
+            return
+
+        global tr_config
+        trfrate = tr_config['trfrate']
+        trback = tr_config['trback']
+        ltrailerloc = tr_config['ltrailerloc']
+        mtrailerloc = tr_config['mtrailerloc']
+
+        if sysarg2.lower() == 'frame' and len(sysarg3) > 0:        
+            db = openTrailerDB()
+            frmatch = sysarg3.strip() 
+            dbcurr = db.execute('SELECT * from mTrailers WHERE var1 = ? LIMIT 50', (frmatch,))   # Get movie list to check trailers
+            dbtuples = dbcurr.fetchall()
+            print('Number of trailres found: ' + str(len(dbtuples)))
+            db.close()
+
+            if len(dbtuples) == 0:
+                mgenlog = 'There were no trailers with the frame rate of ' + sysarg3 + ' to adjust'
+                genLog(mgenlog)  
+                print(mgenlog)
+            else:
+                mgenlog = 'Found ' + str(len(dbtuples)) + ' trailers with the frame rate of ' + sysarg3 + ' to adjust'
+                genLog(mgenlog)
+                print(mgenlog)
+ 
+        if sysarg2.lower() == 'number' and len(sysarg3) > 0:  
+            stamatch = sysarg3.strip()
+            fmatch = '%' + mtrailerloc + '%'
+            db = openTrailerDB()
+            if len(sysarg3) > 0 and len(sysarg4) == 0:  # Query is for single movie
+                dbcurr = db.execute('SELECT * from mTrailers WHERE extras_FileID = ? AND extras_File LIKE ? \
+                ORDER BY extras_FileID LIMIT 50', (stamatch, fmatch,))     # Get movie trailer list to arjust
+            elif len(sysarg3) > 0 and len(sysarg4) > 0:
+                stomatch = sysarg4.strip()
+                dbcurr = db.execute('SELECT * from mTrailers WHERE extras_FileID >= ? and extras_FileID <= ? \
+                AND extras_File LIKE ? ORDER BY extras_FileID LIMIT 50', (stamatch, stomatch, fmatch,))   # Get movie list
+            dbtuples = dbcurr.fetchall()
+            print('Number of trailers found: ' + str(len(dbtuples)))
+            db.close()         
+
+            if len(dbtuples) == 0:
+                mgenlog = 'There were no trailers with movie number(s) ' + sysarg3 + ' to adjust'
+                genLog(mgenlog)  
+                print(mgenlog)
+            else:
+                mgenlog = 'Found ' + str(len(dbtuples)) + ' trailers with requested movie(s) numbers to adjust'
+                genLog(mgenlog)
+                print(mgenlog)           
+
+        for x in range(len(dbtuples)):
+            #print('Trailerfile is: ' +  dbtuples[x][6])
+            curr_tr = dbtuples[x][6]
+            rpos = curr_tr.rfind('\\')
+            new_tr = ltrailerloc + curr_tr[rpos+1:]
+            frame_upd = getDuration(new_tr, 'adjust')
+            db = openTrailerDB()                
+            db.execute('UPDATE mTrailers SET var1=? WHERE extras_File=?', (frame_upd[3], curr_tr,))
+            db.commit()
+            db.close()   
+
+    except Exception as e:
+        print (e)
+        mgenlog = "There was a problem adjusting the trailer: " + sysarg2 + ' ' + sysarg3
+        print(mgenlog)
+        genLog(mgenlog) 
 
 
 def getSeconds(dur_text):                          # Convert time string to secs
@@ -819,17 +1022,27 @@ def checkFolders():                                # Check folders and files
         global tr_config
         trailerloc = tr_config['ltrailerloc']
         mdbfile = tr_config['dbfile']
+        trback = tr_config['trback']
         if not os.path.exists('temp'):             #  Check temp files location
             os.makedirs('temp')
         command = 'del temp\*.mp4 >nul 2>nul'      #  Delete temp files if exist 
         os.system(command)                         #  Clear temp files
         if not os.path.exists('backups'):          #  Check backup files location
             os.makedirs('backups')
+        command = 'del *.mp4 >nul 2>nul'           #  Remove old converted files
+        os.system(command)                         #  Clear converted files
         if not os.path.exists(trailerloc):         #  Check trailer files location
             mgenlog = 'Local trailer file location does not exist.  Mezzmo Trailer Checker exiting.'  
             genLog(mgenlog)
             print(mgenlog)            
             sys.exit()
+        if 'yes' in trback.lower():                
+            backuploc = os.path.join(trailerloc, "backup")
+            if not os.path.exists(backuploc):      #  Check trailer backup files location
+                os.makedirs(backuploc)
+                mgenlog = 'Trailer backup file location did not exist.  Backup folder created.'  
+                genLog(mgenlog)
+                print(mgenlog) 
         if not os.path.isfile(mdbfile):
             mgenlog = 'Mezzmo DB file not found: ' + mdbfile + '.  Please check the config.txt file. '
             genLog(mgenlog)
@@ -876,11 +1089,11 @@ def checkFiles(sysarg1 = '', sysarg2 = '', ccount = 0): # Check size, resolution
 
         if 'new' in sysarg2.lower():
             dbcurr = db.execute('SELECT extras_File from mTrailers WHERE extras_File NOT LIKE ?    \
-            ORDER BY extras_FileID LIMIT ?', ('%youtube%', maxcheck,))
+            ORDER BY lastchecked ASC LIMIT ?', ('%www.youtube%', maxcheck,))
         else: 
             dbcurr = db.execute('SELECT extras_File from mTrailers WHERE extras_File NOT LIKE ?    \
             AND (trDuration=? or trDuration is NULL or tr_resol is NULL or tr_size=? OR tr_size is \
-            NULL) ORDER BY extras_FileID, extras_File LIMIT ?', ('%youtube%', 0, 0, maxcheck,))      
+            NULL) ORDER BY extras_FileID, extras_File LIMIT ?', ('%www.youtube%', 0, 0, maxcheck,))      
         dbtuple = dbcurr.fetchall()                   # Get entries with missing info
 
         if len(dbtuple) == 0:                         # All files updated
@@ -906,7 +1119,7 @@ def checkFiles(sysarg1 = '', sysarg2 = '', ccount = 0): # Check size, resolution
             target = '%' + fpart                     # Find trailer by like name 
             if os.path.isfile(newname ):             # Verify trailerfile exists
                 # print('File name is: ' +  newname)
-                fdur = getDuration(newname)
+                fdur = getDuration(newname, 'check')
                 filestat = os.stat(newname)
                 fsize = filestat.st_size             # Get trailer size in bytes
                 #print(str(fdur[1]) + ' ' + str(fdur[2]) + ' ' + str(fsize) + ' ' + newname)
@@ -916,8 +1129,8 @@ def checkFiles(sysarg1 = '', sysarg2 = '', ccount = 0): # Check size, resolution
                     target,))
                 else:
                     db.execute('UPDATE mTrailers SET lastchecked=?, tr_resol=?, tr_size=?, trStatus=?, \
-                    trDuration=? WHERE extras_File LIKE ?', (currTime, fdur[1], fsize, 'Yes', fdur[2], \
-                    target,))
+                    trDuration=?, var1=? WHERE extras_File LIKE ?', (currTime, fdur[1], fsize, 'Yes',  \
+                    fdur[2], fdur[3], target,))
             else:
                 db.execute('UPDATE mTrailers SET lastchecked=?, tr_resol=?, tr_size=?, trStatus=?,     \
                 trDuration=? WHERE extras_File LIKE ?', (currTime, 2, 2, 'Missing', 2, target,))
@@ -973,7 +1186,7 @@ def renameFiles():                                  # Rename trailer file names 
                     print(mgenlog) 
                 command = "rename " + '"' + x + '" "' + newname + '"'
                 os.system(command)                  # Rename trailer file to trimmed newname
-                hres, vres, duration = getDuration(newname)
+                hres, vres, duration, trfpos = getDuration(newname)
                 if duration > maxdur:               # Do not keep trailer if too long
                     command = "del " + '"' + newname + '"'
                     mgenlog = 'Trailer not kept - Too long: ' + str(duration) + 's - ' + newname
@@ -1043,7 +1256,7 @@ def checkCsv(sysarg1 = '', sysarg2 = ''):           # Generate CSV files
             filename = 'mezhistory_' + fpart + '.csv'
         elif sysarg2.lower() == 'notrail':
             print('Beginning no trailer report generation')
-            noTrailer()
+            noTrailer()                                # Update Temp table for no trailer analysis
             curm = db.execute('select extras_FileID, mgofile_title, mgofile_file FROM \
             mTemp WHERE extras_FileID NOT IN (SELECT extras_FileID FROM mTrailers)    \
             ORDER BY extras_FileID')
@@ -1083,7 +1296,7 @@ def writeCSV(filename, headers, recs):
         pring(mgenlog)
 
 
-def checkFinish(sysarg1):                                    # Successfully finished
+def checkFinish(sysarg1, sysarg2):                           # Successfully finished
 
     if sysarg1.lower() in ['trailer']:                       # Sync trailer db to Mezzmo
         getMezzmoTrailers('sync')
@@ -1092,7 +1305,7 @@ def checkFinish(sysarg1):                                    # Successfully fini
     print(mgenlog)
     genLog(mgenlog)
     if sysarg1.lower() in ['trailer', 'stats']:   
-        displayStats(sysarg1)
+        displayStats(sysarg1, sysarg2)
 
 
 def getTotals():                                             # Gets checked download totals
@@ -1243,12 +1456,13 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
         db.close()        
 
 
-def displayStats(sysarg1):                                   # Display statistics    
+def displayStats(sysarg1, ssyarg2 = ''):              # Display statistics    
 
     try:
         global totcount, bdcount, gdcount, mvcount, skipcount, trlcount, longcount
         global tr_config
         trailerloc = tr_config['ltrailerloc']
+        mtrailerloc = tr_config['mtrailerloc']
 
         print ('\n\n\t ************  Mezzmo Trailer Checker Stats  *************\n')
 
@@ -1264,13 +1478,13 @@ def displayStats(sysarg1):                                   # Display statistic
             print ("\nTrailers fetched today: \t\t" + str(daytotal))
             print ("Trailers fetched total: \t\t" + str(grandtotal))
 
-        elif sysarg1.lower() in ['stats']:
+        elif sysarg1.lower() in ['stats'] and not sysarg2.lower() in ['frame']:
             db = openTrailerDB()
             dqcurr = db.execute('SELECT count (*) from mTrailers')
             totaltuple = dqcurr.fetchone()
-            dqcurr = db.execute('SELECT count (*) from mTrailers WHERE extras_File NOT LIKE ?', ('%youtube%',))
+            dqcurr = db.execute('SELECT count (*) from mTrailers WHERE extras_File NOT LIKE ?', ('%www.youtube%',))
             localtuple = dqcurr.fetchone()
-            dqcurr = db.execute('SELECT count (*) from mTrailers WHERE extras_File LIKE ?', ('%youtube%',))
+            dqcurr = db.execute('SELECT count (*) from mTrailers WHERE extras_File LIKE ?', ('%www.youtube%',))
             youtuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (*) from mTrailers WHERE trstatus LIKE ?', ('%Bad%',))
             badtuple = dqcurr.fetchone()
@@ -1288,16 +1502,31 @@ def displayStats(sysarg1):                                   # Display statistic
             movtuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (DISTINCT extras_FileID) from mTrailers WHERE trStatus IS NULL')
             nullmvtuple = dqcurr.fetchone()
+            dqcurr = db.execute('SELECT COUNT (DISTINCT extras_FileID) from mTrailers WHERE extras_File LIKE ?',
+            (mtrailerloc + "%",))
+            localmovie = dqcurr.fetchone()
+            noTrailer()                                # Update Temp table for no trailer analysis
+            dqcurr = db.execute('select count(extras_FileID) FROM mTemp WHERE extras_FileID NOT IN     \
+            (SELECT extras_FileID FROM mTrailers) ORDER BY extras_FileID')
+            notrailer = dqcurr.fetchone()
+
             db.close()
-            foldersize = filecount = 0
+            foldersize = filecount = bfoldersize = bstoragegb = 0
             for element in os.scandir(trailerloc):
                 foldersize+=os.stat(element).st_size
                 filecount += 1
             storagegb = round((float(foldersize) / 1073741824),2)
+            trbackfolder = os.path.join(trailerloc, 'backup')
+            if os.path.exists(trbackfolder):
+                for belement in os.scandir(trbackfolder):
+                    bfoldersize+=os.stat(belement).st_size            
+                bstoragegb = round((float(bfoldersize) / 1073741824),2)
             avgsize = round((float(foldersize) / 1048576 / filecount),2) 
             print ("\nTrailers fetched today: \t\t" + str(daytotal))
             print ("Trailers fetched total: \t\t" + str(grandtotal))
             print ("\nTotal Movies with trailers: \t\t" + str(movtuple[0]))
+            print ("Movies with local trailers: \t\t" + str(localmovie[0]))
+            print ("Mezzmo movies with no trailers: \t" + str(notrailer[0]))  
             print ("Movies not yet fetched: \t\t" + str(nullmvtuple[0]))
             print ("Movies total trailers: \t\t\t" + str(totaltuple[0]))
             print ("Mezzmo local trailers:  \t\t" + str(localtuple[0]))
@@ -1309,9 +1538,29 @@ def displayStats(sysarg1):                                   # Display statistic
             print ("\nLocal trailer files in folder: \t\t" + str(filecount))
             print ("Total size of local trailers: \t\t" + str(storagegb) + 'GB')
             print ("Average trailer file size: \t\t" + str(avgsize) + 'MB')
+            if bstoragegb > 0:
+                print ("Total size of backup trailers: \t\t" + str(bstoragegb) + 'GB')
             print ("\nMezzmo trailers fetched: \t\t" + str(chktuple[0]))
             print ("Mezzmo trailers not fetched: \t\t" + str(nulltuple[0]))
             print ("\n\n")
+
+        elif sysarg1.lower() in ['stats'] and sysarg2.lower() in ['frame']:
+            db = openTrailerDB()
+            dqcurr = db.execute('SELECT var1, COUNT(*) counter FROM mTrailers WHERE NOT var1 \
+            is NULL GROUP BY var1')
+            frametuples = dqcurr.fetchall()
+            db.close()
+
+            if len(frametuples) == 0:
+                print('There was a problem getting the frame rate statistics')
+                return
+            else:
+                #print('The number of rows is: ' + str(len(frametuples)))
+                print('\tFrame')
+                print('\tRate\t\tCount\n')        
+                for a in range(len(frametuples)):
+                    print('\t' + str(frametuples[a][0]) + '\t\t' + str(frametuples[a][1]))
+
 
     except Exception as e:
         print (e)
@@ -1329,8 +1578,9 @@ getMovieList(sysarg1, sysarg2, sysarg3)                      # Get list of movie
 checkCsv(sysarg1, sysarg2)
 checkFiles(sysarg1, sysarg2)
 cleanTrailers(sysarg1, sysarg2, sysarg3)
+adjustTrailer(sysarg1, sysarg2, sysarg3, sysarg4)
 makeBackups()
-checkFinish(sysarg1)
+checkFinish(sysarg1, sysarg2)
 showErrors(sysarg1, sysarg2)
 
 

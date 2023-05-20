@@ -1,4 +1,21 @@
-v0.0.8 5/4/2023
+v0.0.9
+
+-  Added statistics for count of movies with local trailers and those with no
+   movie trailers in Mezzmo.
+-  Added trailer fps check to add trailer frame rate to trailer checker database
+-  Fixed bug where a check new would continually check the same trailers vs. 
+   checking the oldest last checked trailers.
+-  Fixed minor bug where check new would not check a local trailer with "youtube"
+   trailer in the file name.
+-  Added the ability to automatically adjust / standardize local trailer frame
+   rates and audio levels as new local trailers are fetched with a backup option
+   to retain the original unmodified local trailer.
+-  Added on demand feature to adjust frame rate and audio levels by trailer frame
+   rate, movie number or a range of movies by number.
+-  Added frame rate statistics display.
+
+
+v0.0.8 5/2/2023
 
 -  Improved trailer file naming for You Tube trailers with very short names
    filled with odd characters.
