@@ -1,4 +1,11 @@
-v0.0.9
+v0.0.10 5/26/2023
+
+-  Added hardware encoding support for nVidia to speed up converting trailers
+-  Fixed minor bug introduced with v0.0.9 which would cause long trailers to
+   go through frame rate adjustments and be copied into the trailer folder 
+   vs. being discarded.
+
+v0.0.9  5/20/2023
 
 -  Added statistics for count of movies with local trailers and those with no
    movie trailers in Mezzmo.

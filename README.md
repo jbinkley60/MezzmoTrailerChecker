@@ -20,8 +20,9 @@ A utility to help you manage your Mezzmo local trailer files.
 - Option to limit how many trailers per movie (1-20)
 - Option to order trailers by size
 - Option for supporting prefer <a href="https://github.com/Conceiva/MezzmoKodiPlugin/wiki/Movie-Trailers#prefer-local-trailers">local trailer capability</a> to allow You Tube trailers for Mezzmo web interface
-- Option to <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki/Running-Mezzmo-Trailer-Checker#adjusting-trailers">automatically adjust</a> / standardize trailer frame rates
-- Option to <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki/Running-Mezzmo-Trailer-Checker#adjusting-trailers">automatically adjust</a> trailer audio level
+- Option to automatically adjust / standardize trailer frame rates
+- Option to automatically adjust trailer audio level
+- Hardware encoding acceleration to improve speed
 - Option to prefer official trailers
 - Option for only local trailers
 - Check feature to update trailer size, resolution and duration after manual trailer changes
@@ -54,7 +55,7 @@ A utility to help you manage your Mezzmo local trailer files.
 
 - <b>trailer</b>	-  Runs the trailer checker normally starting with the first movie in the Mezzmo database. <br>
 - <b>trailer new</b>    -  Runs the trailer checker normally starting with the newest movie in the Mezzmo database. <br>
-- <b>trailer name</b>   -  Runs trailer checker for movie name (i.e. trailer name "Christmas Vacation" ) <br>
+- <b>trailer name /b>   -  Runs trailer checker for movie name (i.e. trailer name "Christmas Vacation" ) <br>
 - <b>trailer number</b> -  Runs trailer checker for movie number (i.e. trailer number 1215)  <br> 
 - <b>sync</b>           -  Syncs the Mezzmo Trailer Checker to the Mezzmo database without fetching any trailers. <br> 
 - <b>csv trailer</b>    -  Creates a CSV file with the trailer information in the Mezzmo Trailer Checker<br> 

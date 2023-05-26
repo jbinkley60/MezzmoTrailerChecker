@@ -15,4 +15,5 @@ logfile.txt					# Logfile
 200						# Daily You Tube download limit (recommended not to change. 400 max)
 23.976						# Trailer frame rate (0, 23.976, 24, 25, 30, 50) - Default is 23.976 0 - do nothing
 Yes						# Keep original trailer backup copy when adjusting frame rate or audio level 
-100						# Trailer volume level adjustment.  30%-200% - Default is 100 for no changes. 
+100						# Trailer volume level adjustment.  30%-200% - Default is 100 for no changes.
+None						# Hardware encoding (nevc or none).  NEVC is nVidia encoding.  

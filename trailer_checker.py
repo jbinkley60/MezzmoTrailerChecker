@@ -15,7 +15,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.9'
+version = 'version 0.0.10'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -149,7 +149,14 @@ def getConfig():
         datar = data.split('#')                                        # Remove comments
         audiolvl = datar[0].strip().rstrip("\n")                       # cleanup unwanted characters
         if int(audiolvl) > 200 or int(audiolvl) < 30:
-            audiolvl = '100'                                           # Min and max are 30% and 200#
+            audiolvl = '100'                                           # Min and max are 30% and 200%
+
+        data = fileh.readline()                                        # Get HW encoding
+        if data != '':
+            datas = data.split('#')                                    # Remove comments
+            hwenc = datas[0].strip().rstrip("\n")                      # cleanup unwanted characters
+        else:
+            hwenc = 'None'                                             # Default to None  
 
         fileh.close()                                                  # close the file
         
@@ -172,10 +179,11 @@ def getConfig():
                      'trfrate': trfrate,
                      'trback': trback,
                      'audiolvl': audiolvl,
+                     'hwenc': hwenc,
                     }
 
         configuration = [mezzmodbfile, ltrailerloc, mtrailerloc, mfetchcount, trfetchcount]
-        configuration1 = [maxres, maxdur, mlock, mperf, ofperf, obsize, onlylt, logoutfile, maxcheck, youlimit, trfrate, trback]
+        configuration1 = [maxres, maxdur, mlock, mperf, ofperf, obsize, onlylt, logoutfile, maxcheck, youlimit, trfrate, trback, hwenc]
         mgenlog = ("Mezzmo Trailer Checker started - " + version)
         print(mgenlog)
         genLog(mgenlog)
@@ -775,6 +783,9 @@ def getDuration(trailerfile, checktr=''):         # Get trailer duration from ff
 
     try:
 
+        global tr_config
+        maxdur = int(tr_config['maxdur'])         # Get maximum duration to keep
+
         if '&' in trailerfile:                    # Invalid name for ffpmeg processing
             mgenlog = 'Trailer file name bad name: ' + trailerfile
             genLog(mgenlog)
@@ -820,7 +831,7 @@ def getDuration(trailerfile, checktr=''):         # Get trailer duration from ff
                 else:
                     vres_text = 360
             #print('Length of file is: ' + str(len(data)) + ' ' + str(x) + ' ' + str(rpos) + ' ' + str(fpos) + ' ' + trailerfile)
-        if trfps_text != '0':                        # Check for frame rate and audio adjustments
+        if trfps_text != '0' and maxdur > duration:    # Check for frame rate and audio adjustments
             trfps_text = convertTrailer(trailerfile, trfps_text, checktr)             
 
         if found == 0: 
@@ -846,14 +857,14 @@ def getDuration(trailerfile, checktr=''):         # Get trailer duration from ff
 def convertTrailer(trailerfile, trfps, checktr=''):  # Adjust frame rate and audio level, if needed
 
     try:
-        if 'check' in checktr.lower():
-            return trfps
-
+        if 'check' in checktr.lower() or not os.path.isfile(trailerfile): # Check or trailer deleted
+            return trfps           
         global tr_config
         trfrate = tr_config['trfrate']
         trback = tr_config['trback']
         ltrailerloc = tr_config['ltrailerloc']
         audiolvl = tr_config['audiolvl']        
+        hwenc = tr_config['hwenc']
 
         if trfrate == '0' and audiolvl == '100':                            # Frame rate and audio changes disabled
             return trfps
@@ -871,7 +882,10 @@ def convertTrailer(trailerfile, trfps, checktr=''):  # Adjust frame rate and aud
                 mgenlog = 'Backup trailer successful: ' + trailerfile
                 genLog(mgenlog)
                 print(mgenlog)
-            frcommand = "ffmpeg -i " + trailerfile + " -filter:v fps=" + trfrate + " converted.mp4 >nul 2>nul"
+            if hwenc.lower() in ['nevc']:                                   # nVidia HW encoding
+                frcommand = "ffmpeg -i " + trailerfile + " -c:v h264_nvenc -filter:v fps=" + trfrate + " converted.mp4 >nul 2>nul"
+            else:
+                frcommand = "ffmpeg -i " + trailerfile + " -filter:v fps=" + trfrate + " converted.mp4 >nul 2>nul"
             #print(frcommand)
             mgenlog = "Ajusting frame rate to " + trfrate + " for: " + trailerfile
         elif trfrate != '0' and trfrate != trfps and audiolvl != '100':    # Adjust frame rate and audio
@@ -883,8 +897,12 @@ def convertTrailer(trailerfile, trfps, checktr=''):  # Adjust frame rate and aud
                 genLog(mgenlog)
                 print(mgenlog)
             volvl = str(float(audiolvl)/100)
-            frcommand = "ffmpeg -i " + trailerfile + " -filter:v fps=" + trfrate + "-filter:a volume=" + volvl \
-            + " converted.mp4 >nul 2>nul"
+            if hwenc.lower() in ['nevc']:                                   # nVidia HW encoding
+                frcommand = "ffmpeg -i " + trailerfile + " -c:v h264_nvenc -filter:v fps=" + trfrate +    \
+                "-filter:a volume=" + volvl + " converted.mp4 >nul 2>nul"
+            else:
+                frcommand = "ffmpeg -i " + trailerfile + " -filter:v fps=" + trfrate + "-filter:a volume=" + volvl \
+                + " converted.mp4 >nul 2>nul"
             #print(frcommand)
             mgenlog = "Ajusting frame rate and audio to " + trfrate + ":" + audiolvl + " for: " + trailerfile
         elif (trfrate == '0' or trfrate == trfps) and audiolvl != '100':    # Adjust audio only
@@ -896,8 +914,12 @@ def convertTrailer(trailerfile, trfps, checktr=''):  # Adjust frame rate and aud
                 genLog(mgenlog)
                 print(mgenlog)
             volvl = str(float(audiolvl)/100)
-            frcommand = "ffmpeg -i " + trailerfile +  " -filter:a volume=" + volvl \
-            + " converted.mp4 >nul 2>nul"
+            if hwenc.lower() in ['nevc']:                                   # nVidia HW encoding
+                frcommand = "ffmpeg -i " + trailerfile +  " -c:v h264_nvenc -filter:a volume=" \
+                + volvl + " converted.mp4 >nul 2>nul"
+            else:
+                frcommand = "ffmpeg -i " + trailerfile +  " -filter:a volume=" + volvl \
+                + " converted.mp4 >nul 2>nul"
             #print(frcommand)
             mgenlog = "Ajusting audio volume to " + audiolvl + " for: " + trailerfile
 
@@ -913,9 +935,8 @@ def convertTrailer(trailerfile, trfps, checktr=''):  # Adjust frame rate and aud
         genLog(mvcommand)
         os.system(mvcommand)
 
-        command = 'del *.mp4 /q >nul 2>nul'        #  Remove old converted files
-        os.system(command)                         #  Clear converted files
-
+        command = 'del *.mp4 /q >nul 2>nul'          #  Remove old converted files
+        os.system(command)                           #  Clear converted files
         return trfrate
 
     except Exception as e:
@@ -943,9 +964,9 @@ def adjustTrailer(sysarg1 = '', sysarg2 = '', sysarg3 = '', sysarg4 = ''):   # U
         if sysarg2.lower() == 'frame' and len(sysarg3) > 0:        
             db = openTrailerDB()
             frmatch = sysarg3.strip() 
-            dbcurr = db.execute('SELECT * from mTrailers WHERE var1 = ? LIMIT 50', (frmatch,))   # Get movie list to check trailers
+            dbcurr = db.execute('SELECT * from mTrailers WHERE var1 = ? LIMIT 200', (frmatch,))   # Get movie list to check trailers
             dbtuples = dbcurr.fetchall()
-            print('Number of trailres found: ' + str(len(dbtuples)))
+            print('Number of trailers found: ' + str(len(dbtuples)))
             db.close()
 
             if len(dbtuples) == 0:
@@ -1194,7 +1215,6 @@ def renameFiles():                                  # Rename trailer file names 
                     print(mgenlog) 
                 else:
                     command = "move " + '"' + newname + '" temp >nul 2>nul'
-                #print(command)
                 os.system(command)                  # Move to temp folder till done fetching all
                 return [newname, str(fsize), duration]   # Return new trailer name and info
 
