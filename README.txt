@@ -1,3 +1,12 @@
+v0.0.11 5/30/2023
+
+-  Added "clean files" and "show files" commands to display and delete orphaned
+   trailer files which do not have a Mezzmo trailer entry in the Mezzmo library
+-  Added IMDB movie numbers to the mTrailers table to prepare for upcoming
+   support for local IMDB trailers
+-  Added commit to trailer database after each 500 checks during large full 
+   library trailer database checks 
+
 v0.0.10 5/26/2023
 
 -  Added hardware encoding support for nVidia to speed up converting trailers

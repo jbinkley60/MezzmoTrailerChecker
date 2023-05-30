@@ -27,6 +27,7 @@ A utility to help you manage your Mezzmo local trailer files.
 - Option for only local trailers
 - Check feature to update trailer size, resolution and duration after manual trailer changes
 - Added checks for missing trailer files and trailer files with invalid names
+- Show and delete orphaned local trailer files with do not have a Mezzmo database trailer entry - <b>Mew</b>
 - Full detailed logfile
 - Full Trailer checker statistics
 - <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki/Mezzmo-Trailer-Checker-Data-Export">CSV export</a> of trailer information, checker history and movies in the Mezzmo DB without trailers
@@ -70,8 +71,10 @@ A utility to help you manage your Mezzmo local trailer files.
 - <b>show</b>           -  Generates a listing of all Mezzmo trailers with an error status <br>                          
 - <b>show name</b>      -  Displays trailer information for movie name (i.e. show name "Christmas Vacation" ) <br>
 - <b>show number</b>    -  Displays trailer information for movie number (i.e. show number 1215) <br>
+- <b>show files</b>     -  Displays orphaned local trailer files which do not have a Mezzmo database trailer entry <br>
 - <b>clean name</b>     -  Clears trailer trailer information for movie name (i.e. clean name "Christmas Vacation" ) <br>
-- <b>clean number</b>   -  Clears trailer database information for movie number (i.e. clean number 1215)  <br> 
+- <b>clean number</b>   -  Clears trailer database information for movie number (i.e. clean number 1215)  <br>
+- <b>clean files</b>    -  Deletes orphaned local trailer files which do not have a Mezzmo database trailer entry <br> 
 - <b>backup</b>         -  Creates a time stamped file name backup of the Mezzmo Trailer Checker database <br> 
           
          
