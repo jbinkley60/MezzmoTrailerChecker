@@ -1,4 +1,12 @@
-v0.0.11 5/30/2023
+v0.0.12 6/22/2023
+
+- Fixed a bug where file names which contained a + character could not be re-
+  encoded by ffmpeg and the trailer file would not be copied to the local trailer
+  folder
+- Added support for fetching IMDB trailers.  When enabled and an IMDB trailer
+  is found, they will be placed first in the list in Mezzmo. 
+
+v0.0.11
 
 -  Added "clean files" and "show files" commands to display and delete orphaned
    trailer files which do not have a Mezzmo trailer entry in the Mezzmo library

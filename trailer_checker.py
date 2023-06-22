@@ -15,7 +15,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.11'
+version = 'version 0.0.12'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -158,6 +158,15 @@ def getConfig():
         else:
             hwenc = 'None'                                             # Default to None  
 
+        data = fileh.readline()                                        # Get IMDB key
+        if data != '':
+            datat = data.split('#')                                    # Remove comments
+            if 'none' not in datat[0].lower():
+                imdbky = datat[0].strip().rstrip("\n")                 # cleanup unwanted characters
+            else:
+                imdbky = 'None'
+        else:
+            imdbky = 'None'                                            # Default to None 
         fileh.close()                                                  # close the file
         
         tr_config = {
@@ -180,6 +189,7 @@ def getConfig():
                      'trback': trback,
                      'audiolvl': audiolvl,
                      'hwenc': hwenc,
+                     'imdbky': imdbky,
                     }
 
         configuration = [mezzmodbfile, ltrailerloc, mtrailerloc, mfetchcount, trfetchcount]
@@ -389,6 +399,7 @@ def getMovieList(sysarg1= '', sysarg2= '', sysarg3= ''):                  # Get 
             return
         global tr_config
         global totcount, bdcount, gdcount, mvcount, skipcount, trlcount, longcount
+        imdb_found = 0
         trinfo = []               
 
         movielimit =  tr_config['mcount']
@@ -396,6 +407,7 @@ def getMovieList(sysarg1= '', sysarg2= '', sysarg3= ''):                  # Get 
         mpref = tr_config['mperf']
         youlimit = tr_config['youlimit']
         maxdur = int(tr_config['maxdur'])
+        imdbky = tr_config['imdbky']
         localmatch = '%' + tr_config['mtrailerloc'] + '%'
         ymatch =  'https://www.youtube%'
 
@@ -458,7 +470,38 @@ def getMovieList(sysarg1= '', sysarg2= '', sysarg3= ''):                  # Get 
                     genLog(mgenlog)
                     mvcount += 1
                     db.execute('DELETE FROM mTemp')                       # Clear temp table before writing
-                    db.commit()   
+                    db.commit()
+                    if 'none' not in imdbky:                              # Check IMDB trailer URL
+                        imdbrtrlt, imdbtitle  = checkiTrailer(chktuple[0][4])
+                        if 'none' not in imdbrtrlt:                       # IMDB trailer found
+                            imdbtitle = 'imdb_' + imdbtitle.lower().replace(' ' , '_')
+                            #print('IMDB trailer found: ' + imdbrtrlt + ' ' + imdbtitle)
+                            trinfo = getTrailer(imdbrtrlt, imdbtitle)
+                            #print('trinfo is: ' + str(trinfo))
+                            if trinfo[0] == 0 and int(trinfo[4]) <= maxdur:   # Trailer fetched and not too long
+                                mgenlog = 'Trailer file fetched: ' + trinfo[3] + ' - ' + trinfo[2] + ' - ' + trinfo[1] 
+                                genLog(mgenlog)
+                                print(mgenlog)
+                                updateHistory(trinfo, chktuple[0][3], db)     # Save trailer info to history
+                                updateTemp(trinfo, chktuple[0][3], db)        # Write to temp
+                                gdcount += 1                                  # Increment good trailer count
+                            elif trinfo[0] == 0 and int(trinfo[4]) > maxdur:  # Trailer fetched and too long
+                                updateError(chktuple[0][3], db, 'Long')
+                                updateHistory(trinfo, chktuple[0][3], db)     # Save trailer info to history
+                                longcount += 1                                # Increment long trailer counter
+                            elif 'error' in str(trinfo).lower():
+                                updateError(chktuple[0][3], db, 'Bad')
+                                mgenlog = 'There was an error fetching the local trailer for: ' + imdbrtrlt
+                                genLog(mgenlog)
+                                print(mgenlog)
+                                bdcount += 1   
+                            else:                                             # Error fetching You Tube trailer
+                                updateError(chktuple[0][3], db, 'Bad')
+                                mgenlog = 'There was an error fetching the local trailer for: ' + imdbrtrlt
+                                genLog(mgenlog)
+                                print(mgenlog)
+                                bdcount += 1                                  # Increment bad counter
+
                     for ytube in chktuple:                                # Get You Tube local trailers
                         trinfo = getTrailer(ytube[3])
                         #print('trinfo is: ' + str(trinfo))
@@ -530,28 +573,35 @@ def updateMezzmo(fileID, db):                                             # Upda
         trtuple = trcurr.fetchall()                                       # Get current trailer records
         print('The # of old trailers for: ' + str(fileID) + ' is: ' + str(len(trtuple)))
         #print(str(trtuple))
+        tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew LIKE ? ORDER BY tr_size DESC',  \
+        ('%imdb%',))
+        temptuple2 = tempcurr.fetchall() 
         if 'yes' in ofperf and 'yes' in obsize:                           # If prefer official and by size
-            tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew LIKE ? ORDER BY tr_size DESC',  \
-            ('%official%',))
+            tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew LIKE ? AND extras_fileNew NOT   \
+            LIKE ? ORDER BY tr_size DESC', ('%official%', '%imdb%',))
             temptuple0 = tempcurr.fetchall() 
-            tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew NOT LIKE ? ORDER BY tr_size     \
-            DESC', ('%official%',))
+            tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew NOT LIKE ? AND extras_fileNew   \
+            NOT LIKE ? ORDER BY tr_size DESC', ('%official%', '%imdb%',))
             temptuple1 = tempcurr.fetchall()
-            temptuple = temptuple0 + temptuple1
+            temptuple = temptuple2 + temptuple0 + temptuple1
         elif 'yes' in ofperf and 'no' in obsize:                          # If prefer official and by resolution
-            tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew LIKE ? ORDER BY tr_resol DESC',  \
-            ('%official%',))
+            tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew LIKE ? AND extras_fileNew NOT   \
+            LIKE ? ORDER BY tr_resol DESC', ('%official%', '%imdb%',))
             temptuple0 = tempcurr.fetchall()  
-            tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew NOT LIKE ? ORDER BY tr_resol     \
-            DESC', ('%official%',)) 
+            tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew NOT LIKE ? AND extras_fileNew   \
+            NOT LIKE ? ORDER BY tr_resol DESC', ('%official%', '%imdb%',)) 
             temptuple1 = tempcurr.fetchall()
-            temptuple = temptuple0 + temptuple1                              
+            temptuple = temptuple2 + temptuple0 + temptuple1                              
         elif 'no' in ofperf and 'yes' in obsize:                          # If prefer by size
-            tempcurr = db.execute('SELECT * FROM mTemp ORDER BY tr_size DESC')
-            temptuple = tempcurr.fetchall()            
+            tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew NOT LIKE ? ORDER BY tr_size     \
+            DESC', ('%imdb%',)) 
+            temptuple1 = tempcurr.fetchall()
+            temptuple = temptuple2 + temptuple1
         else:                                                             # If prefer by resolution               
-            tempcurr = db.execute('SELECT * FROM mTemp ORDER BY tr_resol DESC')
-            temptuple = tempcurr.fetchall() 
+            tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew NOT LIKE ?ORDER BY tr_resol     \
+            DESC', ('%imdb%',)) 
+            temptuple1 = tempcurr.fetchall()
+            temptuple = temptuple2 + temptuple1 
         #print('Sorted tuples are: ' + str(temptuple))
         print('The # of new trailers for: ' + str(fileID) + ' is: ' + str(len(temptuple)))
         if len(temptuple) == 0:                                          # No new trailers found
@@ -613,7 +663,8 @@ def updateHistory(histinfo, trurl, hidb):                                 # Upda
     try:          
         hicurr = hidb.execute('SELECT * FROM mtrailers WHERE extras_File=?', (trurl,)) 
         hituple = hicurr.fetchone()                                       # Get current trailer info
-        #print(str(histinfo))
+        #print(str(hituple))
+        #print(str(histinfo) + ' ' + trurl)
         currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')     # Update with local trailer info
         hidb.execute('INSERT into mHistory (dateAdded, mgofile_file, extras_ID, extras_FileID,     \
         extras_TypeUID, extras_File, mgofile_lock, mgofile_title, tr_res, tr_size, lastchecked,    \
@@ -718,17 +769,92 @@ def openMezDB():
     return db
 
 
-def getTrailer(trailer):                                   # Download You Tube trailers
+def checkiTrailer(imdb_id):                                # Find IMDB trailer URL
+
+    try:
+        global tr_config
+        imdbky = tr_config['imdbky']                       # Get IMDB Key
+
+        baseurl = 'https://imdb-api.com/en/API/Trailer/'
+
+        conn = http.client.HTTPSConnection("imdb-api.com", 443)
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 1.0.12'}
+        req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
+        reqnew = urllib.parse.quote(req)
+        encoded = urllib.parse.urlencode(headers)
+        #print(req)
+        conn.request("GET", reqnew, encoded)        
+        res = conn.getresponse()
+        data = res.read()
+        #print(data.decode('utf-8'))
+
+        jdata = json.loads(data)
+        error = jdata['errorMessage']                     #  Check for IMDB errors
+        if len(error) > 0 and 'Invalid API Key' in error:
+            mgenlog = ("Invalid IMDB API key")
+            print(mgenlog)
+            genLog(mgenlog)
+            return (-1, 'none', 'none') 
+        elif len(error) > 0 and 'Server busy' in error:
+            mgenlog = ("IMDB server busy")
+            print(mgenlog)
+            genLog(mgenlog)
+            return ('none', 'none') 
+        elif len(error) > 0 and 'TvEpisode' in error:
+            mgenlog = ("No IMDB trailer for TV movie")
+            print(mgenlog)
+            genLog(mgenlog)
+            return ('none', 'none') 
+        elif len(error) > 0:
+            mgenlog = ("No available IMDB trailer information ")
+            print(mgenlog)
+            genLog(mgenlog)
+            return ('none', 'none')
+
+        imdbtrailer = jdata['link']
+        imdbtitle = jdata['title']
+        #print(imdbtitle + ' ' + imdbtrailer)
+
+        if 'https://www.imdb.com/video/' in imdbtrailer:  # Found trailer
+            mgenlog = ("IMDB trailer found for  - " + imdb_id)
+            print(mgenlog)
+            genLog(mgenlog)
+            return (imdbtrailer, imdbtitle)            
+        else:
+           return ("none", "none") 
+
+    except Exception as e:
+        print (e)
+        mgenlog = "There was a problem getting the IMDB trailer information" 
+        print(mgenlog)
+        genLog(mgenlog) 
+        return ("none", "none")
+
+ 
+def getTrailer(trailer, imdbtitle = ''):                   # Download You Tube \ IMDB trailers
 
     try:
         global tr_config
         maxres = int(tr_config['maxres'])                  # Get max resolution
         tr_cmd = fmt = ''
-        formats = getFormats(trailer)                      # Get available trailer formats
+        formats = getFormats(trailer, imdbtitle)           # Get available trailer formats
         #print('Formats result is: ' + str(formats))
-        if 'Error' in formats:                             # You Tube error getting formats file
-            return formats        
-        if '137 ' in formats and '140 ' in formats and maxres >= 1080:      # 1080P available
+        #print('Trailer info: ' + imdbtitle + ' ' + str(maxres)) 
+        if 'Error' in formats:                             # You Tube / IMDB error getting formats file
+            return 'Error'
+        elif 'imdb' in imdbtitle and '1080p' in formats and maxres >= 1080: # 1080 available for IMDB   
+            tr_cmd = "yt-dlp.exe -f 1080p -q --check-formats --windows-filenames " + trailer
+            fmt = '1080p' 
+        elif 'imdb' in imdbtitle and '720p' in formats and maxres >= 720:   # 720 available for IMDB   
+            tr_cmd = "yt-dlp.exe -f 720p -q --check-formats --windows-filenames " + trailer
+            fmt = '720p' 
+        elif 'imdb' in imdbtitle and '480p' in formats and maxres >= 480:   # 480 available for IMDB   
+            tr_cmd = "yt-dlp.exe -f 480p -q --check-formats --windows-filenames " + trailer
+            fmt = '480p' 
+        elif 'imdb' in imdbtitle and 'SD' in formats:                       # SD available for IMDB   
+            tr_cmd = "yt-dlp.exe -f SD -q --check-formats --windows-filenames " + trailer
+            fmt = '360p'        
+        elif '137 ' in formats and '140 ' in formats and maxres >= 1080:    # 1080P available
             tr_cmd = "yt-dlp.exe -f 137+140 -q --check-formats --restrict-filenames " + trailer + "-sQ"
             fmt = '1080p' 
         elif '137 ' in formats and '139 ' in formats  and maxres >= 1080:   # 1080P available
@@ -750,13 +876,18 @@ def getTrailer(trailer):                                   # Download You Tube t
             return 'Error'                                 # No acceptable format available 
         
         #print (tr_cmd)
-        fetch_result = subprocess.call(tr_cmd, shell=True)
 
+        if 'imdb' in imdbtitle:
+            tsource = 'IMDB'
+        else:
+            tsource = 'You Tube'
+
+        fetch_result = subprocess.call(tr_cmd, shell=True)
         if fetch_result == 0:
-            mgenlog = 'Fetched Youtube trailer at: ' + fmt + ' - ' + trailer
+            mgenlog = 'Fetched ' + tsource + ' trailer at: ' + fmt + ' - ' + trailer
             genLog(mgenlog)
             print(mgenlog)
-            trfile = renameFiles()                           # Cleanup trailer name and move to temp folder
+            trfile = renameFiles(imdbtitle)                  # Cleanup trailer name and move to temp folder
             return [fetch_result, trfile[0], trfile[1], fmt, trfile[2]]
                                                              # Return trailer file info and status
                                                              # trfile[0] = new trailer file name
@@ -775,7 +906,7 @@ def getTrailer(trailer):                                   # Download You Tube t
         print(mgenlog)
 
 
-def getFormats(trailer):                           # Get available You Tube Trailer formats
+def getFormats(trailer,imdbtitle = ''):             # Get available You Tube Trailer formats
 
     try:
         global tr_config
@@ -789,7 +920,10 @@ def getFormats(trailer):                           # Get available You Tube Trai
             fileh = open("output.txt")             # open formats file
             data = fileh.readlines()            
             for x in range(6, len(data)):
-                formats.append(data[x][:4])        # List of available formats
+                if 'imdb' in imdbtitle:
+                    formats.append(data[x][:5].strip())    # List of available formats
+                else:
+                    formats.append(data[x][:4])    # List of available formats
             fileh.close()  
             return formats
         else:
@@ -1007,7 +1141,7 @@ def adjustTrailer(sysarg1 = '', sysarg2 = '', sysarg3 = '', sysarg4 = ''):   # U
             db = openTrailerDB()
             if len(sysarg3) > 0 and len(sysarg4) == 0:  # Query is for single movie
                 dbcurr = db.execute('SELECT * from mTrailers WHERE extras_FileID = ? AND extras_File LIKE ? \
-                ORDER BY extras_FileID LIMIT 50', (stamatch, fmatch,))     # Get movie trailer list to arjust
+                ORDER BY extras_FileID LIMIT 50', (stamatch, fmatch,))     # Get movie trailer list to adjust
             elif len(sysarg3) > 0 and len(sysarg4) > 0:
                 stomatch = sysarg4.strip()
                 dbcurr = db.execute('SELECT * from mTrailers WHERE extras_FileID >= ? and extras_FileID <= ? \
@@ -1201,7 +1335,7 @@ def checkFiles(sysarg1 = '', sysarg2 = '', ccount = 0): # Check size, resolution
         genLog(mgenlog) 
 
 
-def renameFiles():                                  # Rename trailer file names / move to temp folder
+def renameFiles(imdbtitle = ''):                    # Rename trailer file names / move to temp folder
 
         global tr_config
         maxdur = int(tr_config['maxdur'])           # Get maximum duration to keep
@@ -1214,7 +1348,12 @@ def renameFiles():                                  # Rename trailer file names 
                 fsize = filestat.st_size            # Get trailer size in bytes
                 rpos = x.find('[')
                 newname = x[:rpos - 1]
-                if rpos >= 10:                      # Trim extra characters
+                newname = newname.replace('+','_').replace(' ','_')  # Remove file name characters which cannot be reencoded
+                #print('Rename imdbtitle: ' + imdbtitle)
+                if rpos > 1 and len(imdbtitle) > 0 and 'imdb' in imdbtitle:     # Trim extra characters
+                    tempname = ''.join(random.choices(string.ascii_letters, k=6))
+                    newname = imdbtitle + "_" + newname[:rpos - 1] + "_" + tempname + ".mp4"
+                elif rpos >= 10:                    # Trim extra characters
                     newname = newname[:rpos - 1]  + ".mp4"
                 elif len(newname) < 10:
                     tempname = ''.join(random.choices(string.ascii_letters, k=12))
@@ -1550,9 +1689,9 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
                     mgenlog = 'Orphaned trailer file successfully deleted: ' + dbtuples[a][0]
                     genLog(mgenlog)
 
-            mgenlog = '\n\n' + str(gcount) + ' - total orphaned trailer files successfully deleted'
+            mgenlog = str(gcount) + ' - total orphaned trailer files successfully deleted'
             genLog(mgenlog)
-            print(mgenlog + '\n\n')                                
+            print('\n\n' + mgenlog + '\n\n')                                
   
         if sysarg1.lower() in "clean" and sysarg2.lower() in ['name', 'number']:        
             mgenlog = 'Trailers successfully cleaned for movie: ' + str(sysarg3)
@@ -1589,6 +1728,9 @@ def displayStats(sysarg1, ssyarg2 = ''):              # Display statistics
             totaltuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (*) from mTrailers WHERE extras_File NOT LIKE ?', ('%www.youtube%',))
             localtuple = dqcurr.fetchone()
+            target = "%" + mtrailerloc + "imdb%"
+            dqcurr = db.execute('SELECT count (*) from mTrailers WHERE extras_File LIKE ?', (target,))
+            imdbtuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (*) from mTrailers WHERE extras_File LIKE ?', ('%www.youtube%',))
             youtuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (*) from mTrailers WHERE trstatus LIKE ?', ('%Bad%',))
@@ -1636,6 +1778,7 @@ def displayStats(sysarg1, ssyarg2 = ''):              # Display statistics
             print ("Movies total trailers: \t\t\t" + str(totaltuple[0]))
             print ("Mezzmo local trailers:  \t\t" + str(localtuple[0]))
             print ("Mezzmo You Tube trailers: \t\t" + str(youtuple[0]))
+            print ("Mezzmo IMDB trailers: \t\t\t" + str(imdbtuple[0]))
             print ("Mezzmo bad trailers: \t\t\t" + str(badtuple[0]))
             print ("Mezzmo long trailers: \t\t\t" + str(longtuple[0]))
             print ("Mezzmo invalid name trailers: \t\t" + str(invtuple[0]))

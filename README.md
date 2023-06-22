@@ -7,7 +7,7 @@ A utility to help you manage your Mezzmo local trailer files.
 - Read current You Tube movie trailer information from the Mezzmo database
 - Movie trailers can be fetched by newest, oldest, movie name or movie number
 - Track movies which have local trailers, which don't and last checked time
-- Download high quality trailers from You Tube for local playback
+- Download high quality trailers from You Tube and IMDB for local playback
 - Fast You Tube download speeds with daily limit setting
 - Detect You Tube trailers which cannot be downloaded and marks them "Bad"
 - Automatically remove bad trailers from Mezzmo 
@@ -56,7 +56,7 @@ A utility to help you manage your Mezzmo local trailer files.
 
 - <b>trailer</b>	-  Runs the trailer checker normally starting with the first movie in the Mezzmo database. <br>
 - <b>trailer new</b>    -  Runs the trailer checker normally starting with the newest movie in the Mezzmo database. <br>
-- <b>trailer name </b>  -  Runs trailer checker for movie name (i.e. trailer name "Christmas Vacation" ) <br>
+- <b>trailer name /b>   -  Runs trailer checker for movie name (i.e. trailer name "Christmas Vacation" ) <br>
 - <b>trailer number</b> -  Runs trailer checker for movie number (i.e. trailer number 1215)  <br> 
 - <b>sync</b>           -  Syncs the Mezzmo Trailer Checker to the Mezzmo database without fetching any trailers. <br> 
 - <b>csv trailer</b>    -  Creates a CSV file with the trailer information in the Mezzmo Trailer Checker<br> 

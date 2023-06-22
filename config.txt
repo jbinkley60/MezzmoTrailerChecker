@@ -1,8 +1,8 @@
 v:\mezzmo\	   	                        # Path to Mezzmo database
 u:\trailers\	                                # Local path to trailer location
 e:\trailers\                                    # Mezzmo path to trailer location  
-10	      		                        # Number of movies to fetch trailers (1-20 recommended, 50 Max)
-10						# Trailers per movie (1-20 recommended)
+20	      		                        # Number of movies to fetch trailers (1-20)
+20						# Trailers per movie (1-20)
 1080						# Max resolution (1080, 720 or 480)
 360						# Maximum duration of trailer to download in seconds (180-480 recommended)
 Yes				 		# Lock metadata in Mezzmo after completion
@@ -11,9 +11,10 @@ Yes						# Prefer "official" trailers
 No						# Order by size (largest trailers first) otherwise by highest resolution first
 No						# Local trailers only
 logfile.txt					# Logfile
-500						# Number of movies during check (max 10000)
-200						# Daily You Tube download limit (recommended not to change. 400 max)
+10000						# Number of movies during check (max 10000)
+400						# Daily You Tube download limit (recommended not to change)
 23.976						# Trailer frame rate (0, 23.976, 24, 25, 30, 50) - Default is 23.976 0 - do nothing
 Yes						# Keep original trailer backup copy when adjusting frame rate or audio level 
 100						# Trailer volume level adjustment.  30%-200% - Default is 100 for no changes
-None						# Hardware encoding (nevc or none).  NEVC is nVidia encoding  
+None						# Hardware encoding (nevc or none).  NEVC is nVidia encoding. 
+None			 		        # IMDB API Key for IMDB trailers - None if no key
