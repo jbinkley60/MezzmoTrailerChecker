@@ -1,3 +1,10 @@
+v0.0.13 6/23/2023
+
+- Finally stomped out the bug with invalid characters in the trailer names for
+  both You Tube and IMDB trailers which would not allow local trailers to be 
+  copied to the local trailer folder.
+- Improved available formats matching for both You Tube and IMDB trailers.
+
 v0.0.12 6/22/2023
 
 - Fixed a bug where file names which contained a + character could not be re-

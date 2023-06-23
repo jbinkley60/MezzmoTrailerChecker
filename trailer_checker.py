@@ -7,7 +7,7 @@ import urllib.request, urllib.parse, urllib.error
 import http.client
 import mimetypes
 import subprocess
-import string, random
+import string, random, re
 from urllib.request import Request, urlopen
 
 trailerdb = 'mezzmo_trailers.db'
@@ -15,7 +15,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.12'
+version = 'version 0.0.13'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -778,7 +778,7 @@ def checkiTrailer(imdb_id):                                # Find IMDB trailer U
         baseurl = 'https://imdb-api.com/en/API/Trailer/'
 
         conn = http.client.HTTPSConnection("imdb-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Trailer Checker 1.0.12'}
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 1.0.13'}
         req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -837,7 +837,7 @@ def getTrailer(trailer, imdbtitle = ''):                   # Download You Tube \
         global tr_config
         maxres = int(tr_config['maxres'])                  # Get max resolution
         tr_cmd = fmt = ''
-        formats = getFormats(trailer, imdbtitle)           # Get available trailer formats
+        formats = str(getFormats(trailer, imdbtitle))     # Get available trailer formats
         #print('Formats result is: ' + str(formats))
         #print('Trailer info: ' + imdbtitle + ' ' + str(maxres)) 
         if 'Error' in formats:                             # You Tube / IMDB error getting formats file
@@ -854,19 +854,19 @@ def getTrailer(trailer, imdbtitle = ''):                   # Download You Tube \
         elif 'imdb' in imdbtitle and 'SD' in formats:                       # SD available for IMDB   
             tr_cmd = "yt-dlp.exe -f SD -q --check-formats --windows-filenames " + trailer
             fmt = '360p'        
-        elif '137 ' in formats and '140 ' in formats and maxres >= 1080:    # 1080P available
+        elif '137' in formats and '140' in formats and maxres >= 1080:      # 1080P available
             tr_cmd = "yt-dlp.exe -f 137+140 -q --check-formats --restrict-filenames " + trailer + "-sQ"
             fmt = '1080p' 
-        elif '137 ' in formats and '139 ' in formats  and maxres >= 1080:   # 1080P available
+        elif '137' in formats and '139' in formats  and maxres >= 1080:     # 1080P available
             tr_cmd = "yt-dlp.exe -f 137+139 -q --check-formats --restrict-filenames " + trailer + "-sQ"
             fmt = '1080p' 
-        elif '22  ' in formats and maxres >= 720:                           # 720P available
+        elif '22' in formats and maxres >= 720:                             # 720P available
             tr_cmd = "yt-dlp.exe -f 22 -q --restrict-filenames " + trailer
             fmt = '720p' 
-        elif  '135 ' in formats and '140 ' in formats and maxres >= 480:    # 480P available
+        elif  '135' in formats and '140' in formats and maxres >= 480:      # 480P available
             tr_cmd = "yt-dlp.exe -f 135+140 -q --check-formats --restrict-filenames " + trailer + "-sQ"
             fmt = '480p' 
-        elif  '135 ' in formats and '139 ' in formats and maxres >= 480:    # 480P available
+        elif  '135' in formats and '139' in formats and maxres >= 480:      # 480P available
             tr_cmd = "yt-dlp.exe -f 135+139 -q --check-formats --restrict-filenames " + trailer + "-sQ"
             fmt = '480p' 
         elif '18  ' in formats:                            # 360P available
@@ -894,14 +894,14 @@ def getTrailer(trailer, imdbtitle = ''):                   # Download You Tube \
                                                              # trfile[1] = new trailer file size
                                                              # 2 = dur
         elif fetch_result == 1:
-            mgenlog = "A Youtube fetching error occured for: " + trailer
+            mgenlog = "A Youtube / IMDB fetching error occured for: " + trailer
             print(mgenlog)
             genLog(mgenlog)
             return fetch_result
     
     except Exception as e:
         print (e)
-        mgenlog = 'There was a problem getting the You Tube formats information'
+        mgenlog = 'There was a problem getting the formats information'
         genLog(mgenlog)
         print(mgenlog)
 
@@ -1348,8 +1348,11 @@ def renameFiles(imdbtitle = ''):                    # Rename trailer file names 
                 fsize = filestat.st_size            # Get trailer size in bytes
                 rpos = x.find('[')
                 newname = x[:rpos - 1]
-                newname = newname.replace('+','_').replace(' ','_')  # Remove file name characters which cannot be reencoded
-                #print('Rename imdbtitle: ' + imdbtitle)
+                # Remove file name characters which cannot be reencoded
+                newname = newname.replace(' ' ,'_')
+                imdbtitle = imdbtitle.replace(' ' ,'_')
+                newname = re.sub(r'[^\x61-\x7a,\x5f,^\x41-\x5a,^\x30-\x39]',r'', newname) 
+                imdbtitle = re.sub(r'[^\x61-\x7a,\x5f,^\x41-\x5a,^\x30-\x39]',r'', imdbtitle)  
                 if rpos > 1 and len(imdbtitle) > 0 and 'imdb' in imdbtitle:     # Trim extra characters
                     tempname = ''.join(random.choices(string.ascii_letters, k=6))
                     newname = imdbtitle + "_" + newname[:rpos - 1] + "_" + tempname + ".mp4"
