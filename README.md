@@ -8,10 +8,10 @@ A utility to help you manage your Mezzmo local trailer files.
 - Movie trailers can be fetched by newest, oldest, movie name or movie number
 - Track movies which have local trailers, which don't and last checked time
 - Download high quality trailers from You Tube and IMDB for local playback
-- Fast You Tube download speeds with daily limit setting
+- Fast You Tube and IMDB download speeds with daily limit setting
 - Detect You Tube trailers which cannot be downloaded and marks them "Bad"
 - Automatically remove bad trailers from Mezzmo 
-- Automatically normalize and trim the You Tube trailers names
+- Automatically normalize and trim the You Tube and IMDB trailers names
 - User selectable feature of 480P, 720P or 1080P quality trailers (if available, otherwise best quality available)
 - Option to set the maximum duration of trailers
 - Automatically move trailers to designated location (i.e. NAS, local disk etc.)
@@ -32,7 +32,7 @@ A utility to help you manage your Mezzmo local trailer files.
 - Full Trailer checker statistics
 - <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki/Mezzmo-Trailer-Checker-Data-Export">CSV export</a> of trailer information, checker history and movies in the Mezzmo DB without trailers
 - Command line backups of Mezzmo Trailer Checker database
-- User ability to clear trailer information by movie name or database number 
+- User ability to clear trailer information by movie name, database number or status 
 <br/>
 
 ## Installation and usage:
@@ -56,7 +56,7 @@ A utility to help you manage your Mezzmo local trailer files.
 
 - <b>trailer</b>	-  Runs the trailer checker normally starting with the first movie in the Mezzmo database. <br>
 - <b>trailer new</b>    -  Runs the trailer checker normally starting with the newest movie in the Mezzmo database. <br>
-- <b>trailer name </b>  -  Runs trailer checker for movie name (i.e. trailer name "Christmas Vacation" ) <br>
+- <b>trailer name /b>   -  Runs trailer checker for movie name (i.e. trailer name "Christmas Vacation" ) <br>
 - <b>trailer number</b> -  Runs trailer checker for movie number (i.e. trailer number 1215)  <br> 
 - <b>sync</b>           -  Syncs the Mezzmo Trailer Checker to the Mezzmo database without fetching any trailers. <br> 
 - <b>csv trailer</b>    -  Creates a CSV file with the trailer information in the Mezzmo Trailer Checker<br> 
@@ -72,8 +72,10 @@ A utility to help you manage your Mezzmo local trailer files.
 - <b>show name</b>      -  Displays trailer information for movie name (i.e. show name "Christmas Vacation" ) <br>
 - <b>show number</b>    -  Displays trailer information for movie number (i.e. show number 1215) <br>
 - <b>show files</b>     -  Displays orphaned local trailer files which do not have a Mezzmo database trailer entry <br>
-- <b>clean name</b>     -  Clears trailer trailer information for movie name (i.e. clean name "Christmas Vacation" ) <br>
+- <b>clean name</b>     -  Clears trailer database information for movie name (i.e. clean name "Christmas Vacation" ) <br>
 - <b>clean number</b>   -  Clears trailer database information for movie number (i.e. clean number 1215)  <br>
+- <b>clean bad</b>      -  Clears trailer database information for trailers with Bad status <br>
+- <b>clean long</b>     -  Clears trailer database information for trailers with Long status  <br>
 - <b>clean files</b>    -  Deletes orphaned local trailer files which do not have a Mezzmo database trailer entry <br> 
 - <b>backup</b>         -  Creates a time stamped file name backup of the Mezzmo Trailer Checker database <br> 
           

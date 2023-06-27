@@ -15,7 +15,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.13'
+version = 'version 0.0.14'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -244,8 +244,10 @@ def displayHelp(sysarg1):                                 #  Command line help m
         print('show name\t - Displays trailer information for movie name (i.e. show name "Christmas Vacation" )')
         print('show number\t - Displays trailer information for movie number (i.e. show number 1215) ')
         print('show files\t - Displays orphaned local trailer files which do not have a Mezzmo database trailer entry')
-        print('\nclean name\t - Clears trailer trailer information for movie name (i.e. clean name "Christmas Vacation" )')
+        print('\nclean name\t - Clears trailer database information for movie name (i.e. clean name "Christmas Vacation" )')
         print('clean number\t - Clears trailer database information for movie number (i.e. clean number 1215) ')
+        print('clean Bad\t - Clears trailer database information for trailers with Bad status ')
+        print('clean Long\t - Clears trailer database information for trailers with Long status ')
         print('clean files\t - Deletes orphaned local trailer files which do not have a Mezzmo database trailer entry')
         print('\nbackup\t\t - Creates a time stamped file name backup of the Mezzmo Trailer Checker database')
         print('\n=====================================================================================================')
@@ -778,7 +780,7 @@ def checkiTrailer(imdb_id):                                # Find IMDB trailer U
         baseurl = 'https://imdb-api.com/en/API/Trailer/'
 
         conn = http.client.HTTPSConnection("imdb-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Trailer Checker 1.0.13'}
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 1.0.14'}
         req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -1354,8 +1356,9 @@ def renameFiles(imdbtitle = ''):                    # Rename trailer file names 
                 newname = re.sub(r'[^\x61-\x7a,\x5f,^\x41-\x5a,^\x30-\x39]',r'', newname) 
                 imdbtitle = re.sub(r'[^\x61-\x7a,\x5f,^\x41-\x5a,^\x30-\x39]',r'', imdbtitle)  
                 if rpos > 1 and len(imdbtitle) > 0 and 'imdb' in imdbtitle:     # Trim extra characters
-                    tempname = ''.join(random.choices(string.ascii_letters, k=6))
-                    newname = imdbtitle + "_" + newname[:rpos - 1] + "_" + tempname + ".mp4"
+                    #tempname = ''.join(random.choices(string.ascii_letters, k=6))
+                    #newname = imdbtitle + "_" + newname[:rpos - 1] + "_" + tempname + ".mp4"
+                    newname = imdbtitle[:40] + "_" + newname[:rpos - 1]  + ".mp4"
                 elif rpos >= 10:                    # Trim extra characters
                     newname = newname[:rpos - 1]  + ".mp4"
                 elif len(newname) < 10:
@@ -1393,8 +1396,13 @@ def checkDupe(newname):                             # Check duplicate name alrea
         target = '%' + newname
         curd = db.execute('SELECT count (*) FROM mTrailers WHERE extras_File LIKE ?', (target,))        
         curtuple = curd.fetchone()
+        trcount = int(curtuple[0])
+        curd = db.execute('SELECT count (*) FROM mTemp WHERE extras_FileNew LIKE ?', (target,))        
+        curtuple = curd.fetchone()
+        tmcount = int(curtuple[0])
+        totcount = trcount + tmcount
         db.close()
-        return curtuple[0]
+        return totcount
 
     except Exception as e:
         print (e)
@@ -1582,7 +1590,9 @@ def makeBackups():                                   # Make database backups
 
 def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie trailers from DB
 
-        if sysarg1.lower() not in ['show', 'clean'] or  sysarg2.lower() not in ['name', 'number', 'files']: 
+
+        if sysarg1.lower() not in ['show', 'clean'] or  sysarg2.lower() not in         \
+        ['name', 'number', 'files', 'bad', 'long']: 
             return
         elif sysarg2.lower() in ['name', 'number'] and len(sysarg3) == 0:
            print('A movie name or movie number is required.')
@@ -1603,11 +1613,11 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
                 db.close()
                 return
 
-        if sysarg2.lower() in 'name':
+        elif sysarg2.lower() in 'name':
             db = openTrailerDB()
             dbcurr = db.execute('SELECT * from mTrailers WHERE mgofile_title=?    \
             ORDER BY mgofile_title, extras_ID', (sysarg3,))
-            dbtuples = dbcurr.fetchall() 
+            dbtuples = dbcurr.fetchall()
             if len(dbtuples) == 0:
                 mgenlog = 'No trailers found with movie name: ' + str(sysarg3)
                 genLog(mgenlog)
@@ -1615,7 +1625,7 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
                 db.close()
                 return
 
-        if sysarg2.lower() in 'files':
+        elif sysarg2.lower() in 'files':
             db = openTrailerDB()
             db.execute('DELETE FROM mTemp')              # Clear temp table before writing
             db.commit()
@@ -1639,9 +1649,33 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
                 db.close()
                 return
 
+        elif sysarg2.lower() in 'bad':
+            db = openTrailerDB()
+            dbcurr = db.execute('SELECT * from mTrailers WHERE trStatus=?    \
+            ORDER BY mgofile_title, extras_ID', ('Bad',))
+            dbtuples = dbcurr.fetchall() 
+            if len(dbtuples) == 0:
+                mgenlog = 'No trailers found with Bad status'
+                genLog(mgenlog)
+                print(mgenlog)
+                db.close()
+                return
+
+        elif sysarg2.lower() in 'long':
+            db = openTrailerDB()
+            dbcurr = db.execute('SELECT * from mTrailers WHERE trStatus=?    \
+            ORDER BY mgofile_title, extras_ID', ('Long',))
+            dbtuples = dbcurr.fetchall() 
+            if len(dbtuples) == 0:
+                mgenlog = 'No trailers found with Long status'
+                genLog(mgenlog)
+                print(mgenlog)
+                db.close()
+                return
+
         print('The number of trailers found: ' + str(len(dbtuples)))
 
-        if sysarg2.lower() in ['name', 'number']:
+        if sysarg2.lower() in ['name', 'number', 'bad', 'long']:
             print('\n\n Movie #   Trailer # \tStatus\t\tMovie Title    \t\t\t Trailer File\n')
             for trailer in dbtuples:
                 status = '   '
@@ -1665,6 +1699,14 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
                 print(mgenlog)                
                 db.close()
                 return 
+        if 'clean' in sysarg1.lower() and sysarg2.lower() in ['bad', 'long']:  # Do you want to delete ?
+            choice = input('Do you want to delete these trailers (Y/N) ?  They will be removed from the Trailer Checker database\n')
+            if 'n' in choice.lower():
+                mgenlog = 'Trailers will not be cleaned with status: ' + str(sysarg2)
+                genLog(mgenlog)
+                print(mgenlog)                
+                db.close()
+                return 
         elif 'clean' in sysarg1.lower() and sysarg2.lower() in ['files']:  # Do you want to delete ?
             mgenlog = str(len(dbtuples)) + ' - orphaned trailer files found for cleaning'
             genLog(mgenlog)
@@ -1682,6 +1724,12 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
         elif sysarg2.lower() in 'name' and sysarg1.lower() in "clean":
             dbcurr = db.execute('DELETE from mTrailers WHERE mgofile_title=?', (sysarg3,))
             db.commit()
+        elif sysarg2.lower() in 'bad' and sysarg1.lower() in "clean":
+            dbcurr = db.execute('DELETE from mTrailers WHERE trStatus=?', ('Bad',))
+            db.commit()
+        elif sysarg2.lower() in 'long' and sysarg1.lower() in "clean":
+            dbcurr = db.execute('DELETE from mTrailers WHERE trStatus=?', ('Long',))
+            db.commit()
         elif sysarg2.lower() in 'files' and sysarg1.lower() in "clean":
             gcount = bcount = 0
 
@@ -1698,6 +1746,10 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
   
         if sysarg1.lower() in "clean" and sysarg2.lower() in ['name', 'number']:        
             mgenlog = 'Trailers successfully cleaned for movie: ' + str(sysarg3)
+            genLog(mgenlog)
+            print(mgenlog)
+        if sysarg1.lower() in "clean" and sysarg2.lower() in ['bad', 'long']:        
+            mgenlog = 'Trailers successfully cleaned with status: ' + str(sysarg2)
             genLog(mgenlog)
             print(mgenlog)
         db.close()        

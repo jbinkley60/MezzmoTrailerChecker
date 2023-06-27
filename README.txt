@@ -1,3 +1,19 @@
+v0.0.14 6/27/2023
+
+- Simplified the IMDB trailer naming, removing random generated characters by
+  the trailer checker.  Now random characters will only be added to IMDB 
+  trailers  if the trailer file name is a duplicate of an already existing 
+  trailer file. This is consistent with how You Tube trailers are named.  The
+  prior IMDB naming structure will continue to work fine.  This only impacts 
+  new IMDB local trailers.
+- Added "clean bad" and "clean long" commands to remove trailer records from
+  the Trailer Checker database which are displayed with a 'Show" command.  
+  Trailers that are long or bad do not get updated into Mezzmo but will stay
+  in the Trailer Checker database until cleaned.  This do not cause a problem.
+  These new commands just help keep the trailer database cleaner.
+- Improved duplicate trailer name checking when multiple You Tube trailer URLs 
+  point to the same file name for the same new movie fetch.  
+
 v0.0.13 6/23/2023
 
 - Finally stomped out the bug with invalid characters in the trailer names for
