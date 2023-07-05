@@ -18,3 +18,4 @@ Yes						# Keep original trailer backup copy when adjusting frame rate or audio 
 100						# Trailer volume level adjustment.  30%-200% - Default is 100 for no changes
 None						# Hardware encoding (nevc or none).  NEVC is nVidia encoding. 
 None			 		        # IMDB API Key for IMDB trailers - None if no key
+Yes						# Prepend "ytube_" to You Tube trailers.  This is helpful if you have manual trailers 

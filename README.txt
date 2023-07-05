@@ -1,8 +1,13 @@
+v0.0.15 7/5/2023
+
+- Added option to prepend "ytube_" to You Tube trailer names to assist with 
+  future trailer sources, including manual local trailers. 
+
 v0.0.14 6/27/2023
 
 - Simplified the IMDB trailer naming, removing random generated characters by
   the trailer checker.  Now random characters will only be added to IMDB 
-  trailers  if the trailer file name is a duplicate of an already existing 
+  trailers if the trailer file name is a duplicate of an already existing 
   trailer file. This is consistent with how You Tube trailers are named.  The
   prior IMDB naming structure will continue to work fine.  This only impacts 
   new IMDB local trailers.

@@ -15,7 +15,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.14'
+version = 'version 0.0.15'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -166,7 +166,14 @@ def getConfig():
             else:
                 imdbky = 'None'
         else:
-            imdbky = 'None'                                            # Default to None 
+            imdbky = 'None'                                            # Default to None
+
+        data = fileh.readline()                                        # Get You Tube prepend option
+        if data != '':
+            datau = data.split('#')                                    # Remove comments
+            ytube = datau[0].strip().rstrip("\n")                      # cleanup unwanted characters
+        else:
+            ytube = 'Yes'  
         fileh.close()                                                  # close the file
         
         tr_config = {
@@ -190,6 +197,7 @@ def getConfig():
                      'audiolvl': audiolvl,
                      'hwenc': hwenc,
                      'imdbky': imdbky,
+                     'ytube': ytube,
                     }
 
         configuration = [mezzmodbfile, ltrailerloc, mtrailerloc, mfetchcount, trfetchcount]
@@ -780,7 +788,7 @@ def checkiTrailer(imdb_id):                                # Find IMDB trailer U
         baseurl = 'https://imdb-api.com/en/API/Trailer/'
 
         conn = http.client.HTTPSConnection("imdb-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Trailer Checker 1.0.14'}
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 1.0.15'}
         req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -1341,6 +1349,7 @@ def renameFiles(imdbtitle = ''):                    # Rename trailer file names 
 
         global tr_config
         maxdur = int(tr_config['maxdur'])           # Get maximum duration to keep
+        ytube = tr_config['ytube']                  # Get You Tube prepend option
         listOfFiles = os.listdir('.')
         pattern = "*.mp4"
         for x in listOfFiles:
@@ -1357,15 +1366,23 @@ def renameFiles(imdbtitle = ''):                    # Rename trailer file names 
                 imdbtitle = re.sub(r'[^\x61-\x7a,\x5f,^\x41-\x5a,^\x30-\x39]',r'', imdbtitle)  
                 if rpos > 1 and len(imdbtitle) > 0 and 'imdb' in imdbtitle:     # Trim extra characters
                     #tempname = ''.join(random.choices(string.ascii_letters, k=6))
-                    #newname = imdbtitle + "_" + newname[:rpos - 1] + "_" + tempname + ".mp4"
-                    newname = imdbtitle[:40] + "_" + newname[:rpos - 1]  + ".mp4"
+                    if ytube.lower() in 'yes':                                  # Prepend ytube_ to trailer
+                        newname = imdbtitle[:40] + "_" + newname[:rpos - 1]  + ".mp4"
+                    else:
+                        newname = imdbtitle + "_" + newname[:rpos - 1] + "_" + tempname + ".mp4"
                 elif rpos >= 10:                    # Trim extra characters
-                    newname = newname[:rpos - 1]  + ".mp4"
+                    if ytube.lower() in 'yes':                                  # Prepend ytube_ to trailer
+                        newname = "ytube_" + newname[:rpos - 1]  + ".mp4"
+                    else:
+                        newname = newname[:rpos - 1]  + ".mp4"
                 elif len(newname) < 10:
                     tempname = ''.join(random.choices(string.ascii_letters, k=12))
-                    newname = "trailer_" + tempname + ".mp4"
+                    if ytube.lower() in 'yes':                                  # Prepend ytube_ to trailer
+                        newname = "ytube_trailer_" + tempname + ".mp4"
+                    else:
+                        newname = "trailer_" + tempname + ".mp4"
                 else:
-                    newname = newname  + ".mp4"
+                    newname = "ytube_" + newname  + ".mp4"
                 checkname = 'temp\\' + newname
                 dupe = checkDupe(newname)           # Check dupe in db
                 if os.path.isfile(checkname) or dupe > 0: # Ensure local trailer name is not a dupe
