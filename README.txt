@@ -1,19 +1,34 @@
+v0.0.17 8/9/2023
+
+- Fixed bug introduced in v0.0.15 which was causing You Tube 403 errors due to 
+  an improper trailer format response parsing.  This would cause You Tube 720P
+  trailer fetch attempts when a 720P trailer format was not available.
+- Added logging to show format for attempted fetch trailer requests for IMDB or
+  You tube. Previously only successful trailer fetch results would be logged.
+- Updated yt-dlp.exe from v2023.02.17 to v2023.07.06
+
+v0.0.16 8/5/2023
+
+- Fixed a bug where a You Tube server 403 error would cause the trailer checker
+  to stop fetching any further trailers.  Now trailers which cause a 403 error
+  will be marked as bad and removed from Mezzmo.
+
 v0.0.15 7/5/2023
 
 - Added option to prepend "ytube_" to You Tube trailer names to assist with 
-  future trailer sources, including manual local trailers. 
+  future trailer soruces, including manual local trailers. 
 
 v0.0.14 6/27/2023
 
 - Simplified the IMDB trailer naming, removing random generated characters by
   the trailer checker.  Now random characters will only be added to IMDB 
-  trailers if the trailer file name is a duplicate of an already existing 
-  trailer file. This is consistent with how You Tube trailers are named.  The
+  trailers  if the tailer file name is a duplicate of an already existing 
+  trailer file. This is consitent with how You Tube trailers are named.  The
   prior IMDB naming structure will continue to work fine.  This only impacts 
   new IMDB local trailers.
 - Added "clean bad" and "clean long" commands to remove trailer records from
   the Trailer Checker database which are displayed with a 'Show" command.  
-  Trailers that are long or bad do not get updated into Mezzmo but will stay
+  Trailers that are long or bad do not get updated into mezzmo but will stay
   in the Trailer Checker database until cleaned.  This do not cause a problem.
   These new commands just help keep the trailer database cleaner.
 - Improved duplicate trailer name checking when multiple You Tube trailer URLs 
