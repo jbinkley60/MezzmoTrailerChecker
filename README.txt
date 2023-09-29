@@ -1,3 +1,13 @@
+v0.0.18 9/29/2023
+
+- Fixed a bug which would occur when an IMDB movie trailer had a comma in the 
+  name when fetched and the trailer needed the frame rate or audio adjusted.
+- Added option to output trailers in mkv format instead of mp4.  This allows
+  Roku devices and similar which don't support higher resolution mp4 video
+  playback to be able to play local trailers.  There is also a new "adjust 
+  format" command to do bulk conversions from mp4 to mkv up to 200 trailers
+  for each run.  
+
 v0.0.17 8/9/2023
 
 - Fixed bug introduced in v0.0.15 which was causing You Tube 403 errors due to 

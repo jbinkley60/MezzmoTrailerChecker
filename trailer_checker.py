@@ -15,7 +15,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.17'
+version = 'version 0.0.18'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -173,7 +173,14 @@ def getConfig():
             datau = data.split('#')                                    # Remove comments
             ytube = datau[0].strip().rstrip("\n")                      # cleanup unwanted characters
         else:
-            ytube = 'Yes'  
+            ytube = 'Yes'
+
+        data = fileh.readline()                                        # Get output format option
+        if data != '':
+            datav = data.split('#')                                    # Remove comments
+            tformat = datav[0].strip().rstrip("\n").lower()            # cleanup unwanted characters
+        else:
+            tformat = 'mp4'   
         fileh.close()                                                  # close the file
         
         tr_config = {
@@ -198,15 +205,24 @@ def getConfig():
                      'hwenc': hwenc,
                      'imdbky': imdbky,
                      'ytube': ytube,
+                     'tformat': tformat,
                     }
 
+        if not tformat in ['mkv', 'mp4']:
+            tformat = 'mp4'
+            mgenlog = 'Invalid output format in config file.  Defaulting to mp4 format'
+            genLog(mgenlog)
+            print(mgenlog) 
+
         configuration = [mezzmodbfile, ltrailerloc, mtrailerloc, mfetchcount, trfetchcount]
-        configuration1 = [maxres, maxdur, mlock, mperf, ofperf, obsize, onlylt, logoutfile, maxcheck, youlimit, trfrate, trback, hwenc]
+        configuration1 = [maxres, maxdur, mlock, mperf, ofperf, obsize, onlylt, logoutfile]
+        configuration2 = [maxcheck, youlimit, trfrate, trback, hwenc, tformat]
         mgenlog = ("Mezzmo Trailer Checker started - " + version)
         print(mgenlog)
         genLog(mgenlog)
         genLog(str(configuration))               # Record configuration to logfile
-        genLog(str(configuration1))        
+        genLog(str(configuration1))
+        genLog(str(configuration2))        
         mgenlog = "Finished reading config file."
         genLog(mgenlog)       
         return 
@@ -246,6 +262,8 @@ def displayHelp(sysarg1):                                 #  Command line help m
         print('check new\t - Updates and overwrites trailer duration, size and resolution fields in Checker database')
         print('\nadjust frame\t - Adjust trailers by current frame rate (i.e. adjust frame 25)')
         print('adjust number\t - Adjust trailers by movie number or range (i.e. adjust movie 1 or adjust movie 1 10)')
+        print('adjust format\t - Adjust trailer output format (i.e. adjust format 20 .  Converts format for 20 trailers)')
+        print('adjust format x number\t - Adjust trailer output format for movie with number x.')
         print('\nstats\t\t - Generates summary statistics for trailers')
         print('stats frame\t - Generates frame rate summary statistics for local trailers')
         print('\nshow\t\t - Generates a listing of all Mezzmo trailers with an error status')
@@ -542,7 +560,8 @@ def getMovieList(sysarg1= '', sysarg2= '', sysarg3= ''):                  # Get 
                     #print('Number of trailers is ' + str(result))
                     if result > 0:                                        # Successfully featched movie trailers
                        trlcount = trlcount + result                       # Update trailer count
-                       moveTrailers()                                     # Move trailers to trailer folder   
+                       moveTrailers()                                     # Move trailers to trailer folder
+                       checkFormats(db, sysarg1, sysarg2)                 # Check / modify output formats   
  
         db.close()
 
@@ -577,6 +596,7 @@ def updateMezzmo(fileID, db):                                             # Upda
         onlylt = tr_config['onlylt'].lower()
         trcount = tr_config['trcount']
         ofperf = tr_config['ofperf'].lower()
+        tformat = tr_config['tformat'].lower()
         mezzdb = openMezDB()
         trcurr = db.execute('SELECT * FROM mTrailers WHERE extras_FileID=? AND (trStatus LIKE ? OR trStatus \
         IS NULL) LIMIT ?',  (fileID, 'Yes', trcount,))
@@ -623,7 +643,6 @@ def updateMezzmo(fileID, db):                                             # Upda
             return 0
 
         mezzcur = mezzdb.cursor()
-        #mezzcur.execute('PRAGMA journal_mode=wal')
         mezzcur.execute('DELETE from MGOFIleExtras WHERE FileID=?', (fileID,))            
         if 'yes' in mperf:                                               # Add prefer local trailers
             count = 1
@@ -650,7 +669,6 @@ def updateMezzmo(fileID, db):                                             # Upda
         mezzcur.execute('UPDATE MGOFile SET Lock=? WHERE ID=?', (temp[7], fileID,))
         db.commit()        
         mezzdb.commit()
-        #mezzcur.execute("PRAGMA wal_checkpoint=PASSIVE")
         del mezzcur         
         mezzdb.close()
 
@@ -721,6 +739,83 @@ def updateTemp(tempinfo, trurl, tedb):                                    # Upda
         genLog(mgenlog)  
 
 
+def checkFormats(db, sysarg1, sysarg2 = ''):                             # Check / modify output formats
+
+    try:
+
+        if sysarg1.lower() not in ['trailer', 'adjust']:                 # Check formats for trailer action
+            return
+
+        global tr_config
+        trcount = tr_config['trcount']
+        tformat = tr_config['tformat']
+        ltrailerloc = tr_config['ltrailerloc']
+        convert_count = 0
+
+        mezzdb = openMezDB()
+
+        if 'mp4' in tformat:
+            target1 = '.mkv'
+            target = '%' + target1
+        else:
+            target1 = '.mp4'
+            target = '%' + target1
+
+        tempcurr = db.execute('SELECT extras_fileNew FROM mTemp WHERE extras_fileNew LIKE ? ',  \
+        (target,))
+        temptuple = tempcurr.fetchall() 
+        
+        if len(temptuple) == 0:
+            mgenlog = "No trailers found needing output format adjustments. "
+            print(mgenlog)
+            genLog(mgenlog)
+        else:
+            mgenlog = "Found " + str(len(temptuple)) + " trailers needing output format adjustments. "
+            print(mgenlog)
+            genLog(mgenlog)
+
+            #print(str(temptuple))  
+
+        for x in range(len(temptuple)):
+            rpos = temptuple[x][0].rfind('\\')
+            curr_trailer_name = temptuple[x][0][rpos+1:]                         # Current trailer file name
+            curr_trailer = ltrailerloc + curr_trailer_name                       # Current trailer path and file name
+            new_trailer = curr_trailer[:len(curr_trailer) - 3] +  tformat        # Converted trailer path and file name
+            trailer_name = temptuple[x][0]                                       # Current trailer file name  
+            convert_name = trailer_name[:len(trailer_name) - 3] +  tformat       # Converted trailer file name
+            mgenlog = "Format conversion to " + tformat + ' beginning for trailer ' + curr_trailer
+            print(mgenlog)
+            genLog(mgenlog)
+            #print('Format file names: ' + trailer_name + '  ' + convert_name)
+            frcommand = 'ffmpeg.exe -i ' +  curr_trailer + ' -vcodec copy -acodec copy ' + new_trailer + ' >nul 2>nul'
+            os.system(frcommand)
+            #print('Trailer file names: ' + curr_trailer + '  ' + new_trailer)
+            delcommand = "del " + '"' + curr_trailer + '"'                       # Remove old trailer from disk    
+            os.system(delcommand)
+            db.execute('UPDATE mTrailers SET extras_File=? WHERE extras_File = ? ', (convert_name, trailer_name,))
+            mezzdb.execute('UPDATE MGOFIleExtras SET File = ? WHERE File = ? ', (convert_name, trailer_name,))
+            mgenlog = "Format conversion successful to " + new_trailer
+            print(mgenlog)
+            genLog(mgenlog)
+            convert_count += 1
+
+        db.commit()
+        mezzdb.commit()
+        mezzdb.close()
+
+        if convert_count > 0:
+            mgenlog = "Total trailer format converions completed:  " + str(convert_count)
+            print(mgenlog)
+            genLog(mgenlog)
+
+    except Exception as e:
+        print (e)
+        mgenlog = "There was a problem adjusting the output formats."
+        print(mgenlog)
+        genLog(mgenlog)  
+        db.close()
+
+
 def noTrailer():                                         # Update Temp table for no trailer analysis
 
     try:
@@ -788,7 +883,7 @@ def checkiTrailer(imdb_id):                                # Find IMDB trailer U
         baseurl = 'https://imdb-api.com/en/API/Trailer/'
 
         conn = http.client.HTTPSConnection("imdb-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.17'}
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.18'}
         req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -979,11 +1074,15 @@ def getDuration(trailerfile, checktr=''):         # Get trailer duration from ff
                 duration = getSeconds(dur_text)    # Convert to seconds
             if rpos > 0 and found == 1:                
                 dataa = data[x].split('x')
-                vres_text = dataa[2][:4].strip(',').strip()
-                hres_text = dataa[1][len(dataa[1])-4:len(dataa[1])].strip()
+                if '.mp4' in trailerfile:
+                    vres_text = dataa[2][:4].strip(',').strip()
+                    hres_text = dataa[1][len(dataa[1])-4:len(dataa[1])].strip()
+                elif '.mkv' in trailerfile:
+                    vres_text = dataa[1][:4].strip(',').strip()
+                    hres_text = dataa[0][len(dataa[0])-4:len(dataa[0])].strip()
                 found += 1       
                 #print(hres_text + ' ' + vres_text + ' ' + trailerfile)
-                fpspos = data[x].rfind('fps')      # Find fps 
+                fpspos = data[x].rfind('fps')      # Find fps
                 if fpspos > 0:
                     trfps_text = data[x][fpspos-6:fpspos-1].strip()
                     if 's' in trfps_text:         # Whole number frame rate
@@ -1121,8 +1220,8 @@ def adjustTrailer(sysarg1 = '', sysarg2 = '', sysarg3 = '', sysarg4 = ''):   # U
     try:
         if sysarg1.lower() not in 'adjust':
             return
-        if len(sysarg2.lower()) > 0 and sysarg2.lower() not in ['number', 'frame']:
-            print('\nThe valid trailer adjust options are:  number and frame\n')
+        if len(sysarg2.lower()) > 0 and sysarg2.lower() not in ['number', 'frame', 'format']:
+            print('\nThe valid trailer adjust options are:  number, frame and format\n')
             return
 
         global tr_config
@@ -1130,6 +1229,7 @@ def adjustTrailer(sysarg1 = '', sysarg2 = '', sysarg3 = '', sysarg4 = ''):   # U
         trback = tr_config['trback']
         ltrailerloc = tr_config['ltrailerloc']
         mtrailerloc = tr_config['mtrailerloc']
+        tformat = tr_config['tformat']
 
         if sysarg2.lower() == 'frame' and len(sysarg3) > 0:        
             db = openTrailerDB()
@@ -1161,7 +1261,7 @@ def adjustTrailer(sysarg1 = '', sysarg2 = '', sysarg3 = '', sysarg4 = ''):   # U
                 AND extras_File LIKE ? ORDER BY extras_FileID LIMIT 50', (stamatch, stomatch, fmatch,))   # Get movie list
             dbtuples = dbcurr.fetchall()
             print('Number of trailers found: ' + str(len(dbtuples)))
-            db.close()         
+            db.close()       
 
             if len(dbtuples) == 0:
                 mgenlog = 'There were no trailers with movie number(s) ' + sysarg3 + ' to adjust'
@@ -1170,18 +1270,64 @@ def adjustTrailer(sysarg1 = '', sysarg2 = '', sysarg3 = '', sysarg4 = ''):   # U
             else:
                 mgenlog = 'Found ' + str(len(dbtuples)) + ' trailers with requested movie(s) numbers to adjust'
                 genLog(mgenlog)
-                print(mgenlog)           
+                print(mgenlog)
 
-        for x in range(len(dbtuples)):
-            #print('Trailerfile is: ' +  dbtuples[x][6])
-            curr_tr = dbtuples[x][6]
-            rpos = curr_tr.rfind('\\')
-            new_tr = ltrailerloc + curr_tr[rpos+1:]
-            frame_upd = getDuration(new_tr, 'adjust')
-            db = openTrailerDB()                
-            db.execute('UPDATE mTrailers SET var1=? WHERE extras_File=?', (frame_upd[3], curr_tr,))
-            db.commit()
-            db.close()   
+        if sysarg2.lower() in ['frame', 'number']:
+            for x in range(len(dbtuples)):
+                #print('Trailerfile is: ' +  dbtuples[x][6])
+                curr_tr = dbtuples[x][6]
+                rpos = curr_tr.rfind('\\')
+                new_tr = ltrailerloc + curr_tr[rpos+1:]
+                frame_upd = getDuration(new_tr, 'adjust')
+                db = openTrailerDB()                
+                db.execute('UPDATE mTrailers SET var1=? WHERE extras_File=?', (frame_upd[3], curr_tr,))
+                db.commit()
+                db.close()
+            return   
+
+        if sysarg2.lower() == 'format' and len(sysarg3) > 0:                # Bulk output format adjustments
+            if sysarg3.isdigit() and (int(sysarg3) <= 200 or sysarg4.lower() in ['number']):
+                adjcount = int(sysarg3)
+            elif sysarg3.isdigit() and int(sysarg3) > 200:
+                adjcount = 200
+            else:
+                adjcount = 1
+        elif sysarg2.lower() == 'format':                                   # No number given.  Default to 1
+            adjcount = 1
+
+        if 'mp4' in tformat:
+            target1 = '.mkv'
+            target = '%' + target1
+        else:
+            target1 = '.mp4'
+            target = '%' + target1          
+
+        db = openTrailerDB()
+
+        if sysarg4.lower() in ['number']:                                   # Adjust format for specific movie
+            tempcurr = db.execute('SELECT extras_File FROM mTrailers WHERE extras_File LIKE ? and     \
+            extras_FileID = ? ORDER BY extras_File ASC', (target, sysarg3,))
+            temptuple = tempcurr.fetchall()
+        else:                                                               # Or bulk adjust
+            tempcurr = db.execute('SELECT extras_File FROM mTrailers WHERE extras_File LIKE ? ORDER BY \
+            dateAdded DESC LIMIT ?', (target, adjcount))
+            temptuple = tempcurr.fetchall()
+        #print(str(temptuple)) 
+        
+        if len(temptuple) == 0:
+            mgenlog = "No trailers found needing output format adjustments. "
+            print(mgenlog)
+            genLog(mgenlog)
+            return
+
+        for a in range(len(temptuple)):          # Insert trailers to convert into temp table
+            db.execute('INSERT into mTemp(extras_fileNew) values (?)', (temptuple[a][0],))  
+        
+        db.commit()
+
+        checkFormats(db, sysarg1, sysarg2)
+        db.close()    
+
 
     except Exception as e:
         print (e)
@@ -1364,7 +1510,7 @@ def renameFiles(imdbtitle = ''):                    # Rename trailer file names 
                 newname = x[:rpos - 1]
                 # Remove file name characters which cannot be reencoded
                 newname = newname.replace(' ' ,'_')
-                imdbtitle = imdbtitle.replace(' ' ,'_')
+                imdbtitle = imdbtitle.replace(' ' ,'_').replace(',' ,'_')
                 newname = re.sub(r'[^\x61-\x7a,\x5f,^\x41-\x5a,^\x30-\x39]',r'', newname) 
                 imdbtitle = re.sub(r'[^\x61-\x7a,\x5f,^\x41-\x5a,^\x30-\x39]',r'', imdbtitle)  
                 if rpos > 1 and len(imdbtitle) > 0 and 'imdb' in imdbtitle:     # Trim extra characters
@@ -1438,7 +1584,7 @@ def moveTrailers():                                 # Move trailers to trailer l
         trailerloc = tr_config['ltrailerloc']       # Get locatal path to trailer lcoation
 
         command = "move temp\*.mp4 " + trailerloc + " >nul 2>nul"
-        #print(command)
+        print(command)
         os.system(command)
     except Exception as e:
         print (e)
@@ -1827,6 +1973,10 @@ def displayStats(sysarg1, ssyarg2 = ''):              # Display statistics
             dqcurr = db.execute('SELECT COUNT (DISTINCT extras_FileID) from mTrailers WHERE extras_File LIKE ?',
             (mtrailerloc + "%",))
             localmovie = dqcurr.fetchone()
+            dqcurr = db.execute('SELECT count (*) from mTrailers WHERE extras_File LIKE ?', ('%.mp4',))
+            mp4format = dqcurr.fetchone()
+            dqcurr = db.execute('SELECT count (*) from mTrailers WHERE extras_File LIKE ?', ('%.mkv',))
+            mkvformat = dqcurr.fetchone()
             noTrailer()                                # Update Temp table for no trailer analysis
             dqcurr = db.execute('select count(extras_FileID) FROM mTemp WHERE extras_FileID NOT IN     \
             (SELECT extras_FileID FROM mTrailers) ORDER BY extras_FileID')
@@ -1858,6 +2008,8 @@ def displayStats(sysarg1, ssyarg2 = ''):              # Display statistics
             print ("Mezzmo long trailers: \t\t\t" + str(longtuple[0]))
             print ("Mezzmo invalid name trailers: \t\t" + str(invtuple[0]))
             print ("Mezzmo trailer file missing: \t\t" + str(mistuple[0]))
+            print ("\nMezzmo local trailers mp4 format: \t" + str(mp4format[0]))
+            print ("Mezzmo local trailers mkv format: \t" + str(mkvformat[0]))
             print ("\nLocal trailer files in folder: \t\t" + str(filecount))
             print ("Total size of local trailers: \t\t" + str(storagegb) + 'GB')
             print ("Average trailer file size: \t\t" + str(avgsize) + 'MB')

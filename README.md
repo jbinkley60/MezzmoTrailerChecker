@@ -22,6 +22,7 @@ A utility to help you manage your Mezzmo local trailer files.
 - Option for supporting prefer <a href="https://github.com/Conceiva/MezzmoKodiPlugin/wiki/Movie-Trailers#prefer-local-trailers">local trailer capability</a> to allow You Tube trailers for Mezzmo web interface
 - Option to automatically adjust / standardize trailer frame rates
 - Option to automatically adjust trailer audio level
+- Option to set output trailer output format to mp4 or mkv and perform <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki/Running-Mezzmo-Trailer-Checker#adjusting-formats">bulk adjustments</a> to current local trailers
 - Hardware encoding acceleration to improve speed
 - Option to prefer official trailers
 - Option for only local trailers
@@ -65,7 +66,9 @@ A utility to help you manage your Mezzmo local trailer files.
 - <b>check</b>		-  Updates missing trailer duration, size or resolution information in the Checker database<br>
 - <b>check new</b>	-  Updates and overwrites trailer duration, size and resolution fields in Checker database<br>
 - <b>adjust frame</b>	-  Adjust trailers by current frame rate (i.e. adjust frame 25)<br>
-- <b>adjust number</b>	-  Adjust trailers by movie number or range (i.e. adjust movie 1 or adjust movie 1 10)
+- <b>adjust number</b>	-  Adjust trailers by movie number or range (i.e. adjust movie 1 or adjust movie 1 10) <br>
+- <b>adjust format x</b>-  Adjust trailer output format (i.e. adjust format 20 . Converts format for 20 trailers) 200 is max <br>
+- <b>adjust format x number</b>	-  Adjust trailer format output for movie number x  <br>
 - <b>stats</b>		-  Generates summary statistics for trailers<br>
 - <b>stats frame</b>	-  Generates frame rate summary statistics for local trailers<br>
 - <b>show</b>           -  Generates a listing of all Mezzmo trailers with an error status <br>                          
