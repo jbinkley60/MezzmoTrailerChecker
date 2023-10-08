@@ -15,7 +15,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.18'
+version = 'version 0.0.19test'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -437,7 +437,8 @@ def getMovieList(sysarg1= '', sysarg2= '', sysarg3= ''):                  # Get 
         maxdur = int(tr_config['maxdur'])
         imdbky = tr_config['imdbky']
         localmatch = '%' + tr_config['mtrailerloc'] + '%'
-        ymatch =  'https://www.youtube%'
+        #ymatch =  'https://www.youtube%'
+        ymatch = '%://www.youtube%'
 
         daystats = getTotals()                                            # Get current stats
         #print('Daily stats: ' + str(daystats[0]))
@@ -529,7 +530,7 @@ def getMovieList(sysarg1= '', sysarg2= '', sysarg3= ''):                  # Get 
                                 genLog(mgenlog)
                                 print(mgenlog)
                                 bdcount += 1                                  # Increment bad counter
-
+                    
                     for ytube in chktuple:                                # Get You Tube local trailers
                         trinfo = getTrailer(ytube[3])
                         #print('trinfo is: ' + str(trinfo))
