@@ -1,3 +1,8 @@
+v0.0.19 10/8/2023
+
+- Fixed a bug where a You Tube trailer URL which started with http:// vs. 
+  https:// would cause an index out of range error. 
+
 v0.0.18 9/29/2023
 
 - Fixed a bug which would occur when an IMDB movie trailer had a comma in the 
