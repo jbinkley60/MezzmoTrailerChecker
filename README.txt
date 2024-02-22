@@ -1,3 +1,12 @@
+v0.0.20 2/22/2024
+
+- Added the ability to manually enter your own IMDB trailer URLs vs. needing
+  an IMDB key.  See config file.
+- Updated version of yt-dlp.exe to address IMDB download issues with certain
+  newer trailers
+- Minor bugfix where trailer format conversion from mp4 to mkv would stall
+  if destination file name already existed.
+
 v0.0.19 10/8/2023
 
 - Fixed a bug where a You Tube trailer URL which started with http:// vs. 

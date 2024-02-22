@@ -15,7 +15,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.19'
+version = 'version 0.0.20'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -180,7 +180,7 @@ def getConfig():
             datav = data.split('#')                                    # Remove comments
             tformat = datav[0].strip().rstrip("\n").lower()            # cleanup unwanted characters
         else:
-            tformat = 'mp4'   
+            tformat = 'mp4'     
         fileh.close()                                                  # close the file
         
         tr_config = {
@@ -501,7 +501,7 @@ def getMovieList(sysarg1= '', sysarg2= '', sysarg3= ''):                  # Get 
                     db.execute('DELETE FROM mTemp')                       # Clear temp table before writing
                     db.commit()
                     if 'none' not in imdbky:                              # Check IMDB trailer URL
-                        imdbrtrlt, imdbtitle  = checkiTrailer(chktuple[0][4])
+                        imdbrtrlt, imdbtitle  = checkiTrailer(chktuple[0][4], chktuple[0][1])
                         if 'none' not in imdbrtrlt:                       # IMDB trailer found
                             imdbtitle = 'imdb_' + imdbtitle.lower().replace(' ' , '_')
                             #print('IMDB trailer found: ' + imdbrtrlt + ' ' + imdbtitle)
@@ -788,7 +788,7 @@ def checkFormats(db, sysarg1, sysarg2 = ''):                             # Check
             print(mgenlog)
             genLog(mgenlog)
             #print('Format file names: ' + trailer_name + '  ' + convert_name)
-            frcommand = 'ffmpeg.exe -i ' +  curr_trailer + ' -vcodec copy -acodec copy ' + new_trailer + ' >nul 2>nul'
+            frcommand = 'ffmpeg.exe -i ' +  curr_trailer + ' -vcodec copy -acodec copy -y ' + new_trailer + ' >nul 2>nul'
             os.system(frcommand)
             #print('Trailer file names: ' + curr_trailer + '  ' + new_trailer)
             delcommand = "del " + '"' + curr_trailer + '"'                       # Remove old trailer from disk    
@@ -870,21 +870,39 @@ def openMezDB():
         from pysqlite2 import dbapi2 as sqlite
                        
     db = sqlite.connect(dbfile)
-    db.execute("""pragma journal_mode=wal;""")
+    db.execute('PRAGMA journal_mode = WAL;')
+    db.execute('PRAGMA synchronous = NORMAL;')
+    db.execute('PRAGMA cache_size = -10000;')
 
     return db
 
 
-def checkiTrailer(imdb_id):                                # Find IMDB trailer URL
+def checkiTrailer(imdb_id, meztitle):                      # Find IMDB trailer URL
 
     try:
         global tr_config
         imdbky = tr_config['imdbky']                       # Get IMDB Key
 
+        if imdbky.lower() in 'manual':
+            print('\nEnter the IMDB trailer URL for:  ' +  meztitle)
+            print('Hit Enter to skip entering IMDB trailer URL')
+            choice = input('i.e. https://www.imdb.com/video/vi2101135129/?ref_=tt_vi_i_1  ?\n')
+            if len(choice) < 10:                           # Skip IMDB entry
+                print('Manual IMDB trailer URL entry skipped\n')
+                return ('none', 'none')                
+            elif 'https://www.imdb.com/video' not in choice.lower():
+                print('Invalid IMDB trailer URL entered\n')
+                return ('none', 'none')
+            else:
+                mgenlog = ("IMDB trailer manually entered for  - " + imdb_id)
+                print("\n" + mgenlog)
+                genLog(mgenlog)
+                return (choice.strip(), meztitle)                     
+
         baseurl = 'https://imdb-api.com/en/API/Trailer/'
 
         conn = http.client.HTTPSConnection("imdb-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.18'}
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.20'}
         req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -1613,7 +1631,7 @@ def checkCsv(sysarg1 = '', sysarg2 = ''):           # Generate CSV files
         if sysarg2.lower() == 'trailer':
             curm = db.execute('SELECT * FROM mTrailers ORDER BY extras_FileID')
             filename = 'meztrailers_' + fpart + '.csv'
-        elif sysarg2.lower() == 'trailer':
+        elif sysarg2.lower() == 'history':
             curm = db.execute('SELECT * FROM mHistory')
             filename = 'mezhistory_' + fpart + '.csv'
         elif sysarg2.lower() == 'notrail':
