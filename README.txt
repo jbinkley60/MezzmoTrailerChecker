@@ -1,3 +1,10 @@
+v0.0.21 3/14/2024
+
+- Updated yt-dlp.exe to eliminate 404 error messages
+- Fixed minor bug detecting 1080P / 49k audio  format (140/139)
+- Added logging of fetch and trailer formats results commands to logfile for
+  easier troubleshooting
+
 v0.0.20 2/22/2024
 
 - Added the ability to manually enter your own IMDB trailer URLs vs. needing

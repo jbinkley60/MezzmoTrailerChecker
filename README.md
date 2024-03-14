@@ -9,7 +9,6 @@ A utility to help you manage your Mezzmo local trailer files.
 - Track movies which have local trailers, which don't and last checked time
 - Download high quality trailers from You Tube and IMDB for local playback
 - Fast You Tube and IMDB download speeds with daily limit setting
-- Option to manually enter your own IMDB trailer URLs
 - Detect You Tube trailers which cannot be downloaded and marks them "Bad"
 - Automatically remove bad trailers from Mezzmo 
 - Automatically normalize and trim the You Tube and IMDB trailers names

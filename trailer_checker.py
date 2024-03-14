@@ -15,7 +15,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.20'
+version = 'version 0.0.21'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -902,7 +902,7 @@ def checkiTrailer(imdb_id, meztitle):                      # Find IMDB trailer U
         baseurl = 'https://imdb-api.com/en/API/Trailer/'
 
         conn = http.client.HTTPSConnection("imdb-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.20'}
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.21'}
         req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -962,7 +962,8 @@ def getTrailer(trailer, imdbtitle = ''):                   # Download You Tube \
         maxres = int(tr_config['maxres'])                  # Get max resolution
         tr_cmd = fmt = ''
         formats = str(getFormats(trailer, imdbtitle))     # Get available trailer formats
-        #print('Formats result is: ' + str(formats))
+        mgenlog = 'Trailer formats result is: ' + str(formats)
+        genLog(mgenlog)
         #print('Trailer info: ' + imdbtitle + ' ' + str(maxres)) 
         if 'Error' in formats:                             # You Tube / IMDB error getting formats file
             return 'Error'
@@ -980,26 +981,46 @@ def getTrailer(trailer, imdbtitle = ''):                   # Download You Tube \
             fmt = '360p'        
         elif '137 mp4' in formats and '140 m4a' in formats and maxres >= 1080:      # 1080P available
             tr_cmd = "yt-dlp.exe -f 137+140 -q --check-formats --restrict-filenames " + trailer
-            fmt = '1080p' 
+            fmt = '1080p'
+        elif '137     mp4' in formats and '140     m4a' in formats and maxres >= 1080:      # 1080P available
+            tr_cmd = "yt-dlp.exe -f 137+140 -q --check-formats --restrict-filenames " + trailer
+            fmt = '1080p'  
         elif '137 mp4' in formats and '139 m4a' in formats  and maxres >= 1080:     # 1080P available
             tr_cmd = "yt-dlp.exe -f 137+139 -q --check-formats --restrict-filenames " + trailer
-            fmt = '1080p' 
+            fmt = '1080p'
+        elif '137     mp4' in formats and '139     m4a' in formats  and maxres >= 1080:     # 1080P available
+            tr_cmd = "yt-dlp.exe -f 137+139 -q --check-formats --restrict-filenames " + trailer
+            fmt = '1080p'  
         elif '22  mp4' in formats and maxres >= 720:                                # 720P available
             tr_cmd = "yt-dlp.exe -f 22 -q --restrict-filenames " + trailer
-            fmt = '720p' 
+            fmt = '720p'
+        elif '22      mp4' in formats and maxres >= 720:                            # 720P available
+            tr_cmd = "yt-dlp.exe -f 22 -q --restrict-filenames " + trailer
+            fmt = '720p'  
         elif  '135 mp4' in formats and '140 m4a' in formats and maxres >= 480:      # 480P available
             tr_cmd = "yt-dlp.exe -f 135+140 -q --check-formats --restrict-filenames " + trailer
-            fmt = '480p' 
-        elif  '135 mp4' in formats and '140 m4a' in formats and maxres >= 480:      # 480P available
+            fmt = '480p'
+        elif  '135     mp4' in formats and '140     m4a' in formats and maxres >= 480:      # 480P available
+            tr_cmd = "yt-dlp.exe -f 135+140 -q --check-formats --restrict-filenames " + trailer
+            fmt = '480p'  
+        elif  '135 mp4' in formats and '139 m4a' in formats and maxres >= 480:      # 480P available
             tr_cmd = "yt-dlp.exe -f 135+139 -q --check-formats --restrict-filenames " + trailer
-            fmt = '480p' 
+            fmt = '480p'
+        elif  '135     mp4' in formats and '139     m4a' in formats and maxres >= 480:      # 480P available
+            tr_cmd = "yt-dlp.exe -f 135+139 -q --check-formats --restrict-filenames " + trailer
+            fmt = '480p'  
         elif '18  mp4' in formats:                                                  # 360P available
+            tr_cmd = "yt-dlp.exe -f 18 -q --restrict-filenames " + trailer
+            fmt = '360p'
+        elif '18      mp4' in formats:                                              # 360P available
             tr_cmd = "yt-dlp.exe -f 18 -q --restrict-filenames " + trailer
             fmt = '360p'
         else:
             return 'Error'                                 # No acceptable format available 
         
         #print (tr_cmd)
+        mgenlog = 'Trailer fetch command: ' + tr_cmd
+        genLog(mgenlog)
 
         if 'imdb' in imdbtitle:
             tsource = 'IMDB'
@@ -1049,7 +1070,9 @@ def getFormats(trailer,imdbtitle = ''):             # Get available You Tube Tra
             for x in range(6, len(data)):
                 if 'imdb' in imdbtitle:
                     formats.append(data[x][:5].strip())    # List of available formats
-                else:
+                elif data[x][13:14] == ' ' :               # New format
+                    formats.append(data[x][:14].strip())   # List of available formats
+                else:                                      # Old format
                     formats.append(data[x][:7].strip())    # List of available formats
             fileh.close()  
             return formats
