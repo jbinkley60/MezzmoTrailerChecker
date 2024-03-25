@@ -1,3 +1,9 @@
+v0.0.22 3/25/2024
+
+- Fixed getting IMDB trailer information when using an IMDB-API key.  IMDB-API
+  changed their URL to TV-API.  This release fixes the issue and previous IMDB-API
+  keys should continue to work normally.
+
 v0.0.21 3/14/2024
 
 - Updated yt-dlp.exe to eliminate 404 error messages

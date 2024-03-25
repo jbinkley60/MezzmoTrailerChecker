@@ -15,7 +15,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.21'
+version = 'version 0.0.22'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -899,10 +899,10 @@ def checkiTrailer(imdb_id, meztitle):                      # Find IMDB trailer U
                 genLog(mgenlog)
                 return (choice.strip(), meztitle)                     
 
-        baseurl = 'https://imdb-api.com/en/API/Trailer/'
+        baseurl = 'https://tv-api.com/en/API/Trailer/'
 
-        conn = http.client.HTTPSConnection("imdb-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.21'}
+        conn = http.client.HTTPSConnection("tv-api.com", 443)
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.22'}
         req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
