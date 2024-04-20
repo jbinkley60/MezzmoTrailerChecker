@@ -15,7 +15,7 @@ tr_config = {}
 totcount = bdcount = gdcount = mvcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.22'
+version = 'version 0.0.23'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -902,7 +902,7 @@ def checkiTrailer(imdb_id, meztitle):                      # Find IMDB trailer U
         baseurl = 'https://tv-api.com/en/API/Trailer/'
 
         conn = http.client.HTTPSConnection("tv-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.22'}
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.23'}
         req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -1839,6 +1839,16 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
             db.commit()
             listOfFiles = os.listdir(ltrailerloc)
             pattern = "*.mp4"
+            for x in listOfFiles:
+                if fnmatch.fnmatch(x, pattern):
+                    #print(x)
+                    insertfile = ltrailerloc + x
+                    matchfile = mtrailerloc + x
+                    db.execute('INSERT into mTemp(extras_File, mgofile_file) values (?, ?)',  \
+                    (insertfile, matchfile,))               
+            db.commit()
+            listOfFiles = os.listdir(ltrailerloc)
+            pattern = "*.mkv"
             for x in listOfFiles:
                 if fnmatch.fnmatch(x, pattern):
                     #print(x)

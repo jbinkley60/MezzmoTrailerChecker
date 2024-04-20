@@ -1,3 +1,9 @@
+v0.0.23 04/20/2024
+
+- Fixed bug where Clean Files command was only checking .mp4 trailer files and 
+  not .mkv trailer files.
+- Updated yt-dlp.exe to eliminate Android warning messages
+
 v0.0.22 3/25/2024
 
 - Fixed getting IMDB trailer information when using an IMDB-API key.  IMDB-API
