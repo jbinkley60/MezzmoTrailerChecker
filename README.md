@@ -26,6 +26,7 @@ A utility to help you manage your Mezzmo local trailer files.
 - Hardware encoding acceleration to improve speed
 - Option to prefer official trailers
 - Option for only local trailers
+- Option to only download TMDB YouTube tailers and ignore clips, featurettes, shorts etc...
 - Check feature to update trailer size, resolution and duration after manual trailer changes
 - Added checks for missing trailer files and trailer files with invalid names
 - Show and delete orphaned local trailer files with do not have a Mezzmo database trailer entry - <b>Mew</b>
@@ -79,6 +80,7 @@ A utility to help you manage your Mezzmo local trailer files.
 - <b>clean number</b>   -  Clears trailer database information for movie number (i.e. clean number 1215)  <br>
 - <b>clean bad</b>      -  Clears trailer database information for trailers with Bad status <br>
 - <b>clean long</b>     -  Clears trailer database information for trailers with Long status  <br>
+- <b>clean skip</b>     -  Clears trailer database information for trailers with Skip status  <br>
 - <b>clean files</b>    -  Deletes orphaned local trailer files which do not have a Mezzmo database trailer entry <br> 
 - <b>backup</b>         -  Creates a time stamped file name backup of the Mezzmo Trailer Checker database <br> 
           
@@ -86,5 +88,10 @@ A utility to help you manage your Mezzmo local trailer files.
  The CSV export utility currently requires Python version 3.<br/><br/>
 
 See the latest updates on the <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki">Mezzmo Trailer wiki</a>.
+
+<br>
+<br/><img src="icon.png" width="40%" height="40%">   <img src="tmdb.jpg" width="40%" height="40%">
+
+
 
 

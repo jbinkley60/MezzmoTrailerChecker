@@ -7,15 +7,19 @@ import urllib.request, urllib.parse, urllib.error
 import http.client
 import mimetypes
 import subprocess
-import string, random, re
+import string, random, re, base64
 from urllib.request import Request, urlopen
 
 trailerdb = 'mezzmo_trailers.db'
 tr_config = {}
-totcount = bdcount = gdcount = mvcount = 0
+totcount = bdcount = gdcount = mvcount = nontrcount = 0
 trlcount = skipcount = longcount = 0
 
-version = 'version 0.0.23'
+movie_url = 'https://api.themoviedb.org/3/movie/{}?'
+headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.24'}
+tmdb_key = 'a6898792995042896256585082db0842'
+
+version = 'version 0.0.24'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -42,6 +46,8 @@ def getConfig():
 
         global tr_config, version      
         fileh = open("config.txt")                                     # open the config file
+        linecount = len(fileh.readlines())
+        fileh.seek(0)                                                  # Move file pointer to the beginning            
         data = fileh.readline()                                        # Get Mezzmo database location
         dataa = data.split('#')                                        # Remove comments
         data = dataa[0].strip().rstrip("\n")                           # cleanup unwanted characters
@@ -180,7 +186,18 @@ def getConfig():
             datav = data.split('#')                                    # Remove comments
             tformat = datav[0].strip().rstrip("\n").lower()            # cleanup unwanted characters
         else:
-            tformat = 'mp4'     
+            tformat = 'mp4'
+
+        if linecount > 22:
+            data = fileh.readline()                                    # Check for trailers only option
+            if data != '':
+                dataw = data.split('#')                                # Remove comments
+                tronly = dataw[0].strip().rstrip("\n")                 # cleanup unwanted characters
+            else:
+                tronly = "No"
+        else:
+            tronly = "No"            
+     
         fileh.close()                                                  # close the file
         
         tr_config = {
@@ -206,6 +223,7 @@ def getConfig():
                      'imdbky': imdbky,
                      'ytube': ytube,
                      'tformat': tformat,
+                     'tronly': tronly,
                     }
 
         if not tformat in ['mkv', 'mp4']:
@@ -216,9 +234,11 @@ def getConfig():
 
         configuration = [mezzmodbfile, ltrailerloc, mtrailerloc, mfetchcount, trfetchcount]
         configuration1 = [maxres, maxdur, mlock, mperf, ofperf, obsize, onlylt, logoutfile]
-        configuration2 = [maxcheck, youlimit, trfrate, trback, hwenc, tformat]
+        configuration2 = [maxcheck, youlimit, trfrate, trback, hwenc, tformat, tronly]
         mgenlog = ("Mezzmo Trailer Checker started - " + version)
         print(mgenlog)
+        genLog(mgenlog)
+        mgenlog = 'Number of lines in the config file: ' + str(linecount)
         genLog(mgenlog)
         genLog(str(configuration))               # Record configuration to logfile
         genLog(str(configuration1))
@@ -240,7 +260,7 @@ def checkCommands(sysarg1, sysarg2):                                   # Check f
         'show', 'clean', 'backup', 'adjust']:
         displayHelp(sysarg1)
         exit()
-    if len(sysarg1) == 0 or 'help' in sysarg1.lower():
+    if len(sysarg1) <= 1 or '?' in sysarg1.lower():
         displayHelp(sysarg1)
         exit()
 
@@ -426,7 +446,7 @@ def getMovieList(sysarg1= '', sysarg2= '', sysarg3= ''):                  # Get 
         if sysarg1.lower() not in ['trailer']:                            # Must be a valid command
             return
         global tr_config
-        global totcount, bdcount, gdcount, mvcount, skipcount, trlcount, longcount
+        global totcount, bdcount, gdcount, mvcount, skipcount, trlcount, longcount, nontrcount
         imdb_found = 0
         trinfo = []               
 
@@ -436,6 +456,7 @@ def getMovieList(sysarg1= '', sysarg2= '', sysarg3= ''):                  # Get 
         youlimit = tr_config['youlimit']
         maxdur = int(tr_config['maxdur'])
         imdbky = tr_config['imdbky']
+        tronly = tr_config['tronly'].lower()
         localmatch = '%' + tr_config['mtrailerloc'] + '%'
         #ymatch =  'https://www.youtube%'
         ymatch = '%://www.youtube%'
@@ -491,15 +512,26 @@ def getMovieList(sysarg1= '', sysarg2= '', sysarg3= ''):                  # Get 
                     skipcount += 1
                 else:                                                     # Get list of Youtube trailers
                     chcurr = db.execute('SELECT extras_FileID, mgofile_title, extras_ID, extras_File,    \
-                    IMDB_ID from mTrailers WHERE extras_File like ? AND extras_FileID=? AND trStatus IS  \
-                    NULL Limit ? ', (ymatch, trailer[0], trlimit,))       # Get trailer list to check
+                    IMDB_ID, TheMovieDB_ID from mTrailers WHERE extras_File like ? AND extras_FileID=?   \
+                    AND trStatus IS NULL Limit ? ', (ymatch, trailer[0], trlimit,))       # Get trailer list to check
                     chktuple = chcurr.fetchall()
-                    mgenlog = 'Found ' + str(len(chktuple)) + ' Youtube trailers: ' + trailer[1]
+                    mgenlog = 'Found ' + str(len(chktuple)) + ' YouTube trailers: ' + trailer[1]
                     print(mgenlog)
                     genLog(mgenlog)
                     mvcount += 1
                     db.execute('DELETE FROM mTemp')                       # Clear temp table before writing
                     db.commit()
+
+                    if tronly == 'yes' and len(chktuple) > 0:             # Check for valid TMDB trailers
+                        tmdblist = getTMDBtrailers(chktuple[0][5])        # Get trailer only list from TMDB
+                        mgenlog = 'Found ' + str(len(tmdblist)) + ' TMDB trailers: ' + trailer[1]
+                        print(mgenlog)
+                        genLog(mgenlog)
+                        #print(str(tmdblist))
+                        #print(str(chktuple))
+                    else:
+                        tmdblist = []
+
                     if 'none' not in imdbky:                              # Check IMDB trailer URL
                         imdbrtrlt, imdbtitle  = checkiTrailer(chktuple[0][4], chktuple[0][1])
                         if 'none' not in imdbrtrlt:                       # IMDB trailer found
@@ -532,25 +564,37 @@ def getMovieList(sysarg1= '', sysarg2= '', sysarg3= ''):                  # Get 
                                 bdcount += 1                                  # Increment bad counter
                     
                     for ytube in chktuple:                                # Get You Tube local trailers
-                        trinfo = getTrailer(ytube[3])
                         #print('trinfo is: ' + str(trinfo))
-                        if trinfo[0] == 0 and int(trinfo[4]) <= maxdur:   # Trailer fetched and not too long
+                        skip = 0
+                        
+                        if tronly == 'yes' and len(tmdblist) > 0 and ytube[3] not in tmdblist:
+                            skip = 1
+                        else:
+                            trinfo = getTrailer(ytube[3]) 
+
+                        if  skip == 0 and trinfo[0] == 0 and int(trinfo[4]) <= maxdur: # Trailer fetched and not too long
                             mgenlog = 'Trailer file fetched: ' + trinfo[3] + ' - ' + trinfo[2] + ' - ' + trinfo[1] 
                             genLog(mgenlog)
                             print(mgenlog)
                             updateHistory(trinfo, ytube[3], db)           # Save trailer info to history
                             updateTemp(trinfo, ytube[3], db)              # Write to temp
                             gdcount += 1                                  # Increment good trailer count
-                        elif trinfo[0] == 0 and int(trinfo[4]) > maxdur:  # Trailer fetched and too long
+                        elif skip == 0 and trinfo[0] == 0 and int(trinfo[4]) > maxdur:  # Trailer fetched and too long
                             updateError(ytube[3], db, 'Long')
                             updateHistory(trinfo, ytube[3], db)           # Save trailer info to history
                             longcount += 1                                # Increment long trailer counter
-                        elif 'error' in str(trinfo).lower():
+                        elif skip == 0 and 'error' in str(trinfo).lower():
                             updateError(ytube[3], db, 'Bad')
                             mgenlog = 'There was an error fetching the local trailer for: ' + ytube[3]
                             genLog(mgenlog)
                             print(mgenlog)
-                            bdcount += 1   
+                            bdcount += 1
+                        elif skip == 1:
+                            updateError(ytube[3], db, 'Skip')
+                            mgenlog = 'Skipping nontrailer YouTube file: ' + ytube[3]
+                            genLog(mgenlog)                               # Not Youtube trailer file 
+                            print(mgenlog)
+                            nontrcount += 1                               # Increment no trailer count   
                         else:                                             # Error fetching You Tube trailer
                             updateError(ytube[3], db, 'Bad')
                             mgenlog = 'There was an error fetching the local trailer for: ' + ytube[3]
@@ -604,6 +648,7 @@ def updateMezzmo(fileID, db):                                             # Upda
         trtuple = trcurr.fetchall()                                       # Get current trailer records
         print('The # of old trailers for: ' + str(fileID) + ' is: ' + str(len(trtuple)))
         #print(str(trtuple))
+
         tempcurr = db.execute('SELECT * FROM mTemp WHERE extras_fileNew LIKE ? ORDER BY tr_size DESC',  \
         ('%imdb%',))
         temptuple2 = tempcurr.fetchall() 
@@ -902,7 +947,7 @@ def checkiTrailer(imdb_id, meztitle):                      # Find IMDB trailer U
         baseurl = 'https://tv-api.com/en/API/Trailer/'
 
         conn = http.client.HTTPSConnection("tv-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.23'}
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.24'}
         req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -1375,7 +1420,55 @@ def adjustTrailer(sysarg1 = '', sysarg2 = '', sysarg3 = '', sysarg4 = ''):   # U
         print (e)
         mgenlog = "There was a problem adjusting the trailer: " + sysarg2 + ' ' + sysarg3
         print(mgenlog)
+        genLog(mgenlog)
+
+
+def getTMDBtrailers(tmdb_id):                      # Get list of TMDB trailers
+
+    try:
+        print('Getting TMDB trailer list.')
+        b64key = 'YTY4OTg3OTI5OTUwNDI4OTYyNTY1ODUwODJkYjA4NDI='
+        details_url = movie_url.format(tmdb_id)
+
+        hencoded = urllib.parse.urlencode(headers)
+        tmdb_key = base64.b64decode(b64key)
+
+        parms = {'api_key': tmdb_key,              #  TMDB URL Parms
+                'language': 'en-US',
+                'accept': 'application/json',
+                'adult': False,                    
+                'append_to_response': 'trailers',
+                }  
+
+        queryInfo = urllib.parse.urlencode(parms)
+        reqnew = urllib.parse.quote(details_url, safe=':/?')
+        request = reqnew + queryInfo
+
+        #print(request)
+
+        req = urllib.request.Request(request, headers=headers)
+        jresponse = urllib.request.urlopen(req)
+
+        mdata = json.load(jresponse)
+        trailerlist = []
+
+        if 'trailers' in mdata.keys():
+            videos = mdata.get('trailers')
+            trailers = videos.get('youtube')
+
+            for trailer in trailers:
+                if trailer['type'] == 'Trailer':
+                    trailerlist.append('https://www.youtube.com/watch?v=' + trailer['source'])
+                    #print('https://www.youtube.com/watch?v=' + trailer['source'])
+        #print(str(trailerlist))
+        return trailerlist
+
+    except Exception as e:
+        print (e)
+        mgenlog = "There was a getting the TMDB trailer list: " + tmdb_id 
+        print(mgenlog)
         genLog(mgenlog) 
+        return trailerlist         
 
 
 def getSeconds(dur_text):                          # Convert time string to secs
@@ -1635,6 +1728,25 @@ def moveTrailers():                                 # Move trailers to trailer l
         print(mgenlog)
 
 
+def checkUpdate(sysarg1):                          # Check for yt-dlp.exe update
+
+    try:
+        if len(sysarg1) > 1 and sysarg1.lower() != 'trailer':
+            return        
+        command = "yt-dlp.exe -U >nul 2>nul"
+        #print(command)
+        os.system(command)
+        mgenlog = 'Checking for yt-dlp.exe update completed.'
+        genLog(mgenlog)
+        print(mgenlog)
+    except Exception as e:
+        print (e)
+        mgenlog = 'There was a problem checking for a yt-dlp.exe update.'
+        genLog(mgenlog)
+        print(mgenlog)
+        exit()
+
+
 def checkCsv(sysarg1 = '', sysarg2 = ''):           # Generate CSV files
 
         if len(sysarg1) == 0 or sysarg1.lower() not in 'csv':
@@ -1795,12 +1907,11 @@ def makeBackups():                                   # Make database backups
         print(mgenlog)      
 
                                   
-
 def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie trailers from DB
 
 
         if sysarg1.lower() not in ['show', 'clean'] or  sysarg2.lower() not in         \
-        ['name', 'number', 'files', 'bad', 'long']: 
+        ['name', 'number', 'files', 'bad', 'long', 'skip']: 
             return
         elif sysarg2.lower() in ['name', 'number'] and len(sysarg3) == 0:
            print('A movie name or movie number is required.')
@@ -1891,9 +2002,21 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
                 db.close()
                 return
 
+        elif sysarg2.lower() in 'skip':
+            db = openTrailerDB()
+            dbcurr = db.execute('SELECT * from mTrailers WHERE trStatus=?    \
+            ORDER BY mgofile_title, extras_ID', ('Skip',))
+            dbtuples = dbcurr.fetchall() 
+            if len(dbtuples) == 0:
+                mgenlog = 'No trailers found with Skip status'
+                genLog(mgenlog)
+                print(mgenlog)
+                db.close()
+                return
+
         print('The number of trailers found: ' + str(len(dbtuples)))
 
-        if sysarg2.lower() in ['name', 'number', 'bad', 'long']:
+        if sysarg2.lower() in ['name', 'number', 'bad', 'long', 'skip']:
             print('\n\n Movie #   Trailer # \tStatus\t\tMovie Title    \t\t\t Trailer File\n')
             for trailer in dbtuples:
                 status = '   '
@@ -1917,7 +2040,7 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
                 print(mgenlog)                
                 db.close()
                 return 
-        if 'clean' in sysarg1.lower() and sysarg2.lower() in ['bad', 'long']:  # Do you want to delete ?
+        if 'clean' in sysarg1.lower() and sysarg2.lower() in ['bad', 'long', 'skip']:  # Do you want to delete ?
             choice = input('Do you want to delete these trailers (Y/N) ?  They will be removed from the Trailer Checker database\n')
             if 'n' in choice.lower():
                 mgenlog = 'Trailers will not be cleaned with status: ' + str(sysarg2)
@@ -1948,6 +2071,9 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
         elif sysarg2.lower() in 'long' and sysarg1.lower() in "clean":
             dbcurr = db.execute('DELETE from mTrailers WHERE trStatus=?', ('Long',))
             db.commit()
+        elif sysarg2.lower() in 'skip' and sysarg1.lower() in "clean":
+            dbcurr = db.execute('DELETE from mTrailers WHERE trStatus=?', ('Skip',))
+            db.commit()
         elif sysarg2.lower() in 'files' and sysarg1.lower() in "clean":
             gcount = bcount = 0
 
@@ -1976,10 +2102,11 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
 def displayStats(sysarg1, ssyarg2 = ''):              # Display statistics    
 
     try:
-        global totcount, bdcount, gdcount, mvcount, skipcount, trlcount, longcount
+        global totcount, bdcount, gdcount, mvcount, skipcount, trlcount, longcount, nontrcount
         global tr_config
         trailerloc = tr_config['ltrailerloc']
         mtrailerloc = tr_config['mtrailerloc']
+        tronly = tr_config['tronly'].lower()
 
         print ('\n\n\t ************  Mezzmo Trailer Checker Stats  *************\n')
 
@@ -1991,9 +2118,11 @@ def displayStats(sysarg1, ssyarg2 = ''):              # Display statistics
             print ("Mezzmo trailers fetched: \t\t" + str(trlcount))
             print ("Mezzmo trailers bad trailer: \t\t" + str(bdcount))
             print ("Mezzmo trailers too long: \t\t" + str(longcount))
-            print ("Mezzmo trailers downlaoded: \t\t" + str(gdcount))
+            print ("Mezzmo trailers downloaded: \t\t" + str(gdcount))
+            print ("YouTube videos skipped: \t\t" + str(nontrcount))
             print ("\nTrailers fetched today: \t\t" + str(daytotal))
-            print ("Trailers fetched total: \t\t" + str(grandtotal))
+            if tronly == 'yes':
+                print ("Trailers fetched total: \t\t" + str(grandtotal))
 
         elif sysarg1.lower() in ['stats'] and not sysarg2.lower() in ['frame']:
             db = openTrailerDB()
@@ -2012,6 +2141,8 @@ def displayStats(sysarg1, ssyarg2 = ''):              # Display statistics
             longtuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (*) from mTrailers WHERE trstatus LIKE ?', ('%Yes%',))
             chktuple = dqcurr.fetchone()
+            dqcurr = db.execute('SELECT count (*) from mTrailers WHERE trstatus LIKE ?', ('%Skip%',))
+            skptuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (*) from mTrailers WHERE trstatus LIKE ?', ('%Invalid%',))
             invtuple = dqcurr.fetchone()
             dqcurr = db.execute('SELECT count (*) from mTrailers WHERE trstatus LIKE ?', ('%Missing%',))
@@ -2054,10 +2185,11 @@ def displayStats(sysarg1, ssyarg2 = ''):              # Display statistics
             print ("Movies not yet fetched: \t\t" + str(nullmvtuple[0]))
             print ("Movies total trailers: \t\t\t" + str(totaltuple[0]))
             print ("Mezzmo local trailers:  \t\t" + str(localtuple[0]))
-            print ("Mezzmo You Tube trailers: \t\t" + str(youtuple[0]))
+            print ("Mezzmo YouTube trailers: \t\t" + str(youtuple[0]))
             print ("Mezzmo IMDB trailers: \t\t\t" + str(imdbtuple[0]))
             print ("Mezzmo bad trailers: \t\t\t" + str(badtuple[0]))
             print ("Mezzmo long trailers: \t\t\t" + str(longtuple[0]))
+            print ("YouTube skipped trailers: \t\t" + str(skptuple[0]))
             print ("Mezzmo invalid name trailers: \t\t" + str(invtuple[0]))
             print ("Mezzmo trailer file missing: \t\t" + str(mistuple[0]))
             print ("\nMezzmo local trailers mp4 format: \t" + str(mp4format[0]))
@@ -2098,6 +2230,7 @@ def displayStats(sysarg1, ssyarg2 = ''):              # Display statistics
 
 checkCommands(sysarg1, sysarg2)                              # Check for valid commands
 getConfig()                                                  # Process config file
+checkUpdate(sysarg1)                                         # Check for new vesion of yt-dlp.exe
 checkDatabase()                                              # Check trailer database 
 checkFolders()                                               # Check trailer and temp folder locations
 getMezzmoTrailers(sysarg1)                                   # Load Mezzmo trailers into trailer checker DB

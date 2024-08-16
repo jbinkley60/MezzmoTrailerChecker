@@ -1,4 +1,12 @@
-v0.0.23 04/20/2024
+v0.0.24 8/17/2024
+
+- Fixed typo on statistics output
+- Updated yt-dlp.exe to eliminate warning messages
+- Added automatic yt-dlp.exe update checking/updating to the latest version
+- Added option to only fetch TMDB YouTube trailers and ignore featurettes, 
+  , video clips, shorts etc..
+
+v0.0.23 4/20/2024
 
 - Fixed bug where Clean Files command was only checking .mp4 trailer files and 
   not .mkv trailer files.
