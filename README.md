@@ -26,7 +26,7 @@ A utility to help you manage your Mezzmo local trailer files.
 - Hardware encoding acceleration to improve speed
 - Option to prefer official trailers
 - Option for only local trailers
-- Option to only download TMDB YouTube tailers and ignore clips, featurettes, shorts etc...
+- Option to only download TMDB YouTube trailers and ignore clips, featurettes, shorts etc...
 - Check feature to update trailer size, resolution and duration after manual trailer changes
 - Added checks for missing trailer files and trailer files with invalid names
 - Show and delete orphaned local trailer files with do not have a Mezzmo database trailer entry - <b>Mew</b>
