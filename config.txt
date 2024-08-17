@@ -19,4 +19,5 @@ Yes						# Keep original trailer backup copy when adjusting frame rate or audio 
 None						# Hardware encoding (nevc or none).  NEVC is nVidia encoding. 
 None		 		                # TV-API Key for IMDB trailers - None if no key or Manual for user entered URLs
 Yes						# Prepend "ytube_" to You Tube trailers.  This is helpful if you have manual trailers
-mp4						# Output format.  mp4 or mkv.  mp4 is default.  
+mp4						# Output format.  mp4 or mkv.  mp4 is default. 
+No						# Only add TMDB YouTube trailers to Mezzmo.  No is  default.  
