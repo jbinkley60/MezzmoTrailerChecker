@@ -4,7 +4,7 @@ A utility to help you manage your Mezzmo local trailer files.
 
 ## Features:
 
-- Now available in both native Python and Windows x64 EXE formats **New**
+- Now available in both native Python and Windows x64 EXE formats  <sup>**New**</sup>
 - Read current You Tube movie trailer information from the Mezzmo database
 - Movie trailers can be fetched by newest, oldest, movie name or movie number
 - Track movies which have local trailers, which don't and last checked time
