@@ -16,10 +16,10 @@ totcount = bdcount = gdcount = mvcount = nontrcount = 0
 trlcount = skipcount = longcount = 0
 
 movie_url = 'https://api.themoviedb.org/3/movie/{}?'
-headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.24'}
+headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.25'}
 tmdb_key = 'a6898792995042896256585082db0842'
 
-version = 'version 0.0.24'
+version = 'version 0.0.25'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -259,10 +259,10 @@ def checkCommands(sysarg1, sysarg2):                                   # Check f
     if len(sysarg1) > 1 and sysarg1.lower() not in ['trailer', 'csv', 'sync', 'help', 'check', 'stats',   \
         'show', 'clean', 'backup', 'adjust']:
         displayHelp(sysarg1)
-        exit()
+        sys.exit()
     if len(sysarg1) <= 1 or '?' in sysarg1.lower():
         displayHelp(sysarg1)
-        exit()
+        sys.exit()
 
 
 def displayHelp(sysarg1):                                 #  Command line help menu display
@@ -295,6 +295,7 @@ def displayHelp(sysarg1):                                 #  Command line help m
         print('clean Bad\t - Clears trailer database information for trailers with Bad status ')
         print('clean Long\t - Clears trailer database information for trailers with Long status ')
         print('clean files\t - Deletes orphaned local trailer files which do not have a Mezzmo database trailer entry')
+        print('clean skip\t - Clears trailer database information for trailers with Skip status ')
         print('\nbackup\t\t - Creates a time stamped file name backup of the Mezzmo Trailer Checker database')
         print('\n=====================================================================================================')
         print('\n ')
@@ -437,7 +438,7 @@ def checkDatabase():
         print (e)
         mgenlog = "There was a problem verifying the trailer database file: " + trailerdb
         print(mgenlog)
-        exit()   
+        sys.exit()   
 
 
 def getMovieList(sysarg1= '', sysarg2= '', sysarg3= ''):                  # Get list of movies to check
@@ -947,7 +948,7 @@ def checkiTrailer(imdb_id, meztitle):                      # Find IMDB trailer U
         baseurl = 'https://tv-api.com/en/API/Trailer/'
 
         conn = http.client.HTTPSConnection("tv-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.24'}
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.25'}
         req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)

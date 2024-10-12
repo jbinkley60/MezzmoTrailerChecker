@@ -1,10 +1,15 @@
+v0.0.25 10/12/2024
+
+- Code updates to support .exe release option
+- Now available in both native Python and Windows x64 EXE formats
+
 v0.0.24 8/17/2024
 
 - Fixed typo on statistics output
 - Updated yt-dlp.exe to eliminate warning messages
 - Added automatic yt-dlp.exe update checking/updating to the latest version
 - Added option to only fetch TMDB YouTube trailers and ignore featurettes, 
-  , video clips, shorts etc..
+  video clips, shorts etc..
 
 v0.0.23 4/20/2024
 
