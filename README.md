@@ -84,7 +84,7 @@ A utility to help you manage your Mezzmo local trailer files.
 - <b>clean skip</b>     -  Clears trailer database information for trailers with Skip status  <br>
 - <b>clean files</b>    -  Deletes orphaned local trailer files which do not have a Mezzmo database trailer entry <br> 
 - <b>backup</b>         -  Creates a time stamped file name backup of the Mezzmo Trailer Checker database <br>
-= <b>update</>          -  Force update check for yt-dlp.exe.  Otherwise check is once a day. <br> 
+- <b>update</b>         -  Force update check for yt-dlp.exe.  Otherwise check is once a day. <br> 
           
          
  The CSV export utility currently requires Python version 3.<br/><br/>
