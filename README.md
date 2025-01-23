@@ -83,12 +83,13 @@ A utility to help you manage your Mezzmo local trailer files.
 - <b>clean long</b>     -  Clears trailer database information for trailers with Long status  <br>
 - <b>clean skip</b>     -  Clears trailer database information for trailers with Skip status  <br>
 - <b>clean files</b>    -  Deletes orphaned local trailer files which do not have a Mezzmo database trailer entry <br> 
-- <b>backup</b>         -  Creates a time stamped file name backup of the Mezzmo Trailer Checker database <br> 
+- <b>backup</b>         -  Creates a time stamped file name backup of the Mezzmo Trailer Checker database <br>
+= <b>update</>          -  Force update check for yt-dlp.exe.  Otherwise check is once a day. <br> 
           
          
  The CSV export utility currently requires Python version 3.<br/><br/>
 
-See the latest updates on the <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki">Mezzmo Trailer wiki</a>.
+See the latest updates on the <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki">Mezzmo Checker Trailer wiki</a>.
 
 <br>
 <br/><img src="icon.png" width="40%" height="40%">   <img src="tmdb.jpg" width="40%" height="40%">

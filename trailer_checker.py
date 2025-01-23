@@ -16,10 +16,10 @@ totcount = bdcount = gdcount = mvcount = nontrcount = 0
 trlcount = skipcount = longcount = 0
 
 movie_url = 'https://api.themoviedb.org/3/movie/{}?'
-headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.25'}
+headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.26'}
 tmdb_key = 'a6898792995042896256585082db0842'
 
-version = 'version 0.0.25'
+version = 'version 0.0.26'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -65,13 +65,13 @@ def getConfig():
         datac = data.split('#')                                        # Remove comments
         mfetchcount = datac[0].strip().rstrip("\n")                    # cleanup unwanted characters
         if int(mfetchcount) > 50:
-            mfetchcount = 50                                           # Max trailer per movie is 50
+            mfetchcount = 50                                           # Max number of movies to fetch is 50
 
         data = fileh.readline()                                        # Get number of trailers per movie
         datad = data.split('#')                                        # Remove comments
         trfetchcount = datad[0].strip().rstrip("\n")                   # cleanup unwanted characters
-        if int(trfetchcount) > 20:
-            trfetchcount = 20                                          # Max trailer per movie is 20
+        if int(trfetchcount) > 50:
+            trfetchcount = 50                                          # Max trailer per movie is 50
 
         data = fileh.readline()                                        # Get trailer max resolution
         datae = data.split('#')                                        # Remove comments
@@ -196,7 +196,17 @@ def getConfig():
             else:
                 tronly = "No"
         else:
-            tronly = "No"            
+            tronly = "No" 
+
+        if linecount > 23:
+            data = fileh.readline()                                    # Check for clean skipped tailers option
+            if data != '':
+                datax = data.split('#')                                # Remove comments
+                cleanskp = datax[0].strip().rstrip("\n")                 # cleanup unwanted characters
+            else:
+                cleanskp = "No"
+        else:
+            cleanskp = "No"                
      
         fileh.close()                                                  # close the file
         
@@ -224,6 +234,7 @@ def getConfig():
                      'ytube': ytube,
                      'tformat': tformat,
                      'tronly': tronly,
+                     'cleanskp': cleanskp,
                     }
 
         if not tformat in ['mkv', 'mp4']:
@@ -234,7 +245,7 @@ def getConfig():
 
         configuration = [mezzmodbfile, ltrailerloc, mtrailerloc, mfetchcount, trfetchcount]
         configuration1 = [maxres, maxdur, mlock, mperf, ofperf, obsize, onlylt, logoutfile]
-        configuration2 = [maxcheck, youlimit, trfrate, trback, hwenc, tformat, tronly]
+        configuration2 = [maxcheck, youlimit, trfrate, trback, hwenc, tformat, tronly, cleanskp]
         mgenlog = ("Mezzmo Trailer Checker started - " + version)
         print(mgenlog)
         genLog(mgenlog)
@@ -255,12 +266,12 @@ def getConfig():
 
 
 def checkCommands(sysarg1, sysarg2):                                   # Check for valid commands
-   
+  
     if len(sysarg1) > 1 and sysarg1.lower() not in ['trailer', 'csv', 'sync', 'help', 'check', 'stats',   \
-        'show', 'clean', 'backup', 'adjust']:
+        'show', 'clean', 'backup', 'adjust', 'update']:
         displayHelp(sysarg1)
         sys.exit()
-    if len(sysarg1) <= 1 or '?' in sysarg1.lower():
+    if len(sysarg1) <= 1 or '?' in sysarg1.lower() or sysarg1.lower() == 'help':
         displayHelp(sysarg1)
         sys.exit()
 
@@ -268,7 +279,7 @@ def checkCommands(sysarg1, sysarg2):                                   # Check f
 def displayHelp(sysarg1):                                 #  Command line help menu display
 
         print('\n=====================================================================================================')
-        print('\nThe only valid commands are -  trailer, sync, csv, check, stats, show, clean, backup, adjust and help  ')
+        print('\nThe only valid commands are -  trailer, sync, csv, check, stats, show, clean, backup, adjust, update and help  ')
         print('\nExample:  trailer_checker.py trailer')      
         print('\ntrailer\t\t - Runs the trailer checker normally starting with the first movie in the Mezzmo database')
         print('trailer new\t - Runs the trailer checker normally starting with the newest movie in the Mezzmo database')
@@ -297,6 +308,7 @@ def displayHelp(sysarg1):                                 #  Command line help m
         print('clean files\t - Deletes orphaned local trailer files which do not have a Mezzmo database trailer entry')
         print('clean skip\t - Clears trailer database information for trailers with Skip status ')
         print('\nbackup\t\t - Creates a time stamped file name backup of the Mezzmo Trailer Checker database')
+        print('update\t\t - Force update check for yt-dlp.exe.  Otherwise check is once a day.') 
         print('\n=====================================================================================================')
         print('\n ')
 
@@ -374,6 +386,25 @@ def genLog(mgenlog):                                        #  Write to logfile
         fileh.close()
 
 
+def checkLogfile():                                        # Checks / trims the size of the logfile
+
+    try:
+        global tr_config
+        logoutfile = tr_config['logoutfile']
+        fileh = open(logoutfile, "r+")                     #  open log file
+        flines = fileh.readlines()
+        fcount = len(flines)
+        if fcount > 11000:
+            fileh.seek(0)
+            fileh.truncate()
+            fileh.writelines(flines[fcount - 10000:])
+        fileh.close()
+        mgenlog = 'The number of lines in the logfile is: ' + str(len(flines))
+        genLog(mgenlog)
+    except:
+        print('\nThere was a problem trimming the logfile length')  
+
+
 def checkDatabase():
 
     try:
@@ -391,7 +422,6 @@ def checkDatabase():
         db.execute('CREATE INDEX IF NOT EXISTS trailer_3 ON mTrailers (dateAdded)')
         db.execute('CREATE INDEX IF NOT EXISTS trailer_4 ON mTrailers (trStatus)')
 
-
         db.execute('CREATE table IF NOT EXISTS mHistory (dateAdded TEXT, mgofile_title TEXT,          \
         mgofile_file INTEGER, extras_ID  INTEGER, extras_FileID INTEGER, extras_TypeUID TEXT,         \
         extras_File TEXT, mgofile_lock INTEGER,  tr_res TEXT, tr_size INTEGER, newfile TEXT,          \
@@ -404,6 +434,8 @@ def checkDatabase():
         db.execute('CREATE INDEX IF NOT EXISTS trailer_11 ON mTemp (extras_FileID)')
         db.execute('CREATE INDEX IF NOT EXISTS trailer_12 ON mTrailers (extras_File)')
         db.execute('DELETE FROM mTemp')                                    # Clear temp table on startup
+
+        db.execute('CREATE table IF NOT EXISTS mChecked (last_checked TEXT, var1 TEXT, var2 TEXT)')
 
         try:
             db.execute('ALTER TABLE mTrailers ADD COLUMN IMDB_ID TEXT')
@@ -1732,14 +1764,36 @@ def moveTrailers():                                 # Move trailers to trailer l
 def checkUpdate(sysarg1):                          # Check for yt-dlp.exe update
 
     try:
-        if len(sysarg1) > 1 and sysarg1.lower() != 'trailer':
-            return        
-        command = "yt-dlp.exe -U >nul 2>nul"
-        #print(command)
-        os.system(command)
-        mgenlog = 'Checking for yt-dlp.exe update completed.'
-        genLog(mgenlog)
-        print(mgenlog)
+        if len(sysarg1) > 1 and sysarg1.lower() not in ['trailer', 'update']:
+            return
+
+        currDate = datetime.now().strftime('%Y-%m-%d')
+
+        db = openTrailerDB()
+        curd = db.execute('SELECT count (*) FROM mChecked WHERE last_checked = ?', (currDate,))        
+        curtuple = curd.fetchone()
+        
+        if curtuple[0] == 0 or sysarg1.lower() == 'update':  
+            command = "yt-dlp.exe -U >nul 2>nul"
+            #print(command)
+            os.system(command)
+            if curtuple[0] == 0:
+                mgenlog = 'Daily check for yt-dlp.exe update completed.'
+            else:
+                mgenlog = 'Forced check for yt-dlp.exe update completed.'
+            genLog(mgenlog)
+            print(mgenlog)
+            db.execute('DELETE FROM mCHecked')
+            db.commit()
+            db.execute('INSERT into mChecked(last_checked) values (?)', (currDate,))
+            db.commit()
+        else:
+            mgenlog = 'Daily check for yt-dlp.exe already completed today.'
+            genLog(mgenlog)
+            print(mgenlog)
+        db.close()
+
+
     except Exception as e:
         print (e)
         mgenlog = 'There was a problem checking for a yt-dlp.exe update.'
@@ -1816,12 +1870,45 @@ def checkFinish(sysarg1, sysarg2):                           # Successfully fini
 
     if sysarg1.lower() in ['trailer']:                       # Sync trailer db to Mezzmo
         getMezzmoTrailers('sync')
-        checkFiles('check', '', gdcount)      
+        checkFiles('check', '', gdcount)
+        cleanSkip()                                          # Clean skipped trailers
+    checkLogfile()                                           # Trim logfile to 10k lines       
     mgenlog = 'Mezzmo Trailer Checker completed successfully.'
     print(mgenlog)
     genLog(mgenlog)
     if sysarg1.lower() in ['trailer', 'stats']:   
         displayStats(sysarg1, sysarg2)
+
+
+def cleanSkip():                                             # Clean skipped non-trailer files
+
+        global tr_config
+
+        if tr_config['cleanskp'].lower()  != 'yes':
+            return
+
+        mgenlog = 'Checking for skipped non-trailer files enabled.'
+        print(mgenlog)
+        genLog(mgenlog)
+
+        db = openTrailerDB()
+        dbcurr = db.execute('SELECT count (*) from mTrailers WHERE trStatus LIKE ? ', ('%Skip%',))
+        showtuples = dbcurr.fetchone()
+
+        if showtuples[0] > 0:
+            mgenlog = 'Non-trailer files found in trailer DB: ' + str(showtuples[0])
+            print(mgenlog)
+            genLog(mgenlog)
+            db.execute('DELETE from mTrailers WHERE trStatus LIKE ?', ('%Skip%',))
+            db.commit()
+            mgenlog = 'Non-trailer file database cleaning completed.'
+            print(mgenlog)
+            genLog(mgenlog)
+        else:
+            mgenlog = 'No Non-trailer files found in trailer DB.  Skipping cleaning.'
+            print(mgenlog)
+            genLog(mgenlog)
+        db.close()
 
 
 def getTotals():                                             # Gets checked download totals
@@ -2231,8 +2318,8 @@ def displayStats(sysarg1, ssyarg2 = ''):              # Display statistics
 
 checkCommands(sysarg1, sysarg2)                              # Check for valid commands
 getConfig()                                                  # Process config file
-checkUpdate(sysarg1)                                         # Check for new vesion of yt-dlp.exe
 checkDatabase()                                              # Check trailer database 
+checkUpdate(sysarg1)                                         # Check for new vesion of yt-dlp.exe
 checkFolders()                                               # Check trailer and temp folder locations
 getMezzmoTrailers(sysarg1)                                   # Load Mezzmo trailers into trailer checker DB
 getMovieList(sysarg1, sysarg2, sysarg3)                      # Get list of movies to check and get trailers

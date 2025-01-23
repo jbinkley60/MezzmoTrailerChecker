@@ -1,8 +1,8 @@
 v:\mezzmo\	   	                        # Path to Mezzmo database
 u:\trailers\	                                # Local path to trailer location
 e:\trailers\                                    # Mezzmo path to trailer location  
-20	      		                        # Number of movies to fetch trailers (1-20)
-20						# Trailers per movie (1-20)
+20	      		                        # Number of movies to fetch trailers (1-50)
+50						# Trailers per movie (1-50)
 1080						# Max resolution (1080, 720 or 480)
 360						# Maximum duration of trailer to download in seconds (180-480 recommended)
 Yes				 		# Lock metadata in Mezzmo after completion
@@ -20,4 +20,5 @@ None						# Hardware encoding (nevc or none).  NEVC is nVidia encoding.
 None		 		                # TV-API Key for IMDB trailers - None if no key or Manual for user entered URLs
 Yes						# Prepend "ytube_" to You Tube trailers.  This is helpful if you have manual trailers
 mp4						# Output format.  mp4 or mkv.  mp4 is default. 
-No						# Only add TMDB YouTube trailers to Mezzmo.  No is  default.  
+No						# Only add TMDB YouTube trailers to Mezzmo.  No is default.
+No						# Clean skipped non-Trailer TNDB files from Trailer DB.  No is  default.

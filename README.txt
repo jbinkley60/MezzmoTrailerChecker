@@ -1,3 +1,18 @@
+v0.0.26 1/23/2025
+
+- Increased the maximum number of trailer to fetch per movie from 20 to 50. 
+  It is recommended to set to 50 if you have enabled only fetch TMDB YouTube
+  trailers and ignore featurettes, video clips, shorts etc.. If this is disabled
+  then set the number much lower.
+- Added a configuration file option to automatically clean skipped non-trailer
+  files from the trailer DB if the same only fetch TMDB YouTube trailers option 
+  is enabled.  This avoids manually database cleaning of skipped files. 
+- Added automatic logfile pruning to 10,000 lines
+- Fixed bug where command line Help would not work only ?
+- Modified checking for yt-dlp.exe updates to once a day vs. each time the 
+  Trailer Checker is run.
+- Added update command to force an immediate yt-dlp.exe update check  
+ 
 v0.0.25 10/12/2024
 
 - Code updates to support .exe release option
