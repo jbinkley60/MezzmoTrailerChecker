@@ -87,9 +87,9 @@ A utility to help you manage your Mezzmo local trailer files.
 - <b>update</b>         -  Force update check for yt-dlp.exe.  Otherwise check is once a day. <br> 
           
          
- The CSV export utility currently requires Python version 3.<br/><br/>
+ The CSV export utility currently requires Python version 3 unless you are using the exe version.<br/><br/>
 
-See the latest updates on the <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki">Mezzmo Checker Trailer wiki</a>.
+See the latest updates on the <a href="https://github.com/jbinkley60/MezzmoTrailerChecker/wiki">Mezzmo Trailer Checker wiki</a>.
 
 <br>
 <br/><img src="icon.png" width="40%" height="40%">   <img src="tmdb.jpg" width="40%" height="40%">
