@@ -1,6 +1,22 @@
+v0.0.28 3/31/2025
+
+- Added a fix to address an issue where TV-API (i.e. IMDB) was returning a trailer
+  file URL where a portion of the URL was duplicated.  The trailer checker was still
+  working because the yt-dlp.exe downloader was ignoring the duplicate portion of the
+  URL but I've gone ahead and added detection to fix the URLs just in case and improve
+  the logging.
+- Added improved error logging to make it easier to troubleshoot Python exceptions.
+
+v0.0.27 2/3/2025
+
+- Added checking to ensure HW acceleration was successful during reformatting
+  of trailers.  If not, Trailer Checker will drop back to software only.
+- Added displaying and cleaning of trailer file entries with a status of Missing.
+  These are trailer file entries with no corresponding trailer file. 
+
 v0.0.26 1/23/2025
 
-- Increased the maximum number of trailer to fetch per movie from 20 to 50. 
+- Increased the maximum number of trailers to fetch per movie from 20 to 50. 
   It is recommended to set to 50 if you have enabled only fetch TMDB YouTube
   trailers and ignore featurettes, video clips, shorts etc.. If this is disabled
   then set the number much lower.

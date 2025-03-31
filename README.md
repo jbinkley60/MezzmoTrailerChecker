@@ -77,12 +77,14 @@ A utility to help you manage your Mezzmo local trailer files.
 - <b>show name</b>      -  Displays trailer information for movie name (i.e. show name "Christmas Vacation" ) <br>
 - <b>show number</b>    -  Displays trailer information for movie number (i.e. show number 1215) <br>
 - <b>show files</b>     -  Displays orphaned local trailer files which do not have a Mezzmo database trailer entry <br>
+- <b>show status/b>     -  Displays local trailer information with status of Bad, Long, Skip or Missing <br>
 - <b>clean name</b>     -  Clears trailer database information for movie name (i.e. clean name "Christmas Vacation" ) <br>
 - <b>clean number</b>   -  Clears trailer database information for movie number (i.e. clean number 1215)  <br>
 - <b>clean bad</b>      -  Clears trailer database information for trailers with Bad status <br>
 - <b>clean long</b>     -  Clears trailer database information for trailers with Long status  <br>
 - <b>clean skip</b>     -  Clears trailer database information for trailers with Skip status  <br>
-- <b>clean files</b>    -  Deletes orphaned local trailer files which do not have a Mezzmo database trailer entry <br> 
+- <b>clean files</b>    -  Deletes orphaned local trailer files which do not have a Mezzmo database trailer entry <br>
+- <b>clean missing</b>  -  Clears trailer database information for trailers with Missing trailer file status <br>
 - <b>backup</b>         -  Creates a time stamped file name backup of the Mezzmo Trailer Checker database <br>
 - <b>update</b>         -  Force update check for yt-dlp.exe.  Otherwise check is once a day. <br> 
           

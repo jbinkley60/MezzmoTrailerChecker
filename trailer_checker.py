@@ -16,10 +16,10 @@ totcount = bdcount = gdcount = mvcount = nontrcount = 0
 trlcount = skipcount = longcount = 0
 
 movie_url = 'https://api.themoviedb.org/3/movie/{}?'
-headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.26'}
+headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.28'}
 tmdb_key = 'a6898792995042896256585082db0842'
 
-version = 'version 0.0.26'
+version = 'version 0.0.28'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -259,8 +259,8 @@ def getConfig():
         return 
  
     except Exception as e:
-        print (e)
-        mgenlog = 'There was a problem parsing the config file.'
+        #print (e)
+        mgenlog = 'There was a problem parsing the config file. ' + str(e)
         genLog(mgenlog)
         print(mgenlog)
 
@@ -301,12 +301,14 @@ def displayHelp(sysarg1):                                 #  Command line help m
         print('show name\t - Displays trailer information for movie name (i.e. show name "Christmas Vacation" )')
         print('show number\t - Displays trailer information for movie number (i.e. show number 1215) ')
         print('show files\t - Displays orphaned local trailer files which do not have a Mezzmo database trailer entry')
+        print('show status\t - Displays local trailer information with status of Bad, Long, Skip or Missing')
         print('\nclean name\t - Clears trailer database information for movie name (i.e. clean name "Christmas Vacation" )')
         print('clean number\t - Clears trailer database information for movie number (i.e. clean number 1215) ')
         print('clean Bad\t - Clears trailer database information for trailers with Bad status ')
         print('clean Long\t - Clears trailer database information for trailers with Long status ')
         print('clean files\t - Deletes orphaned local trailer files which do not have a Mezzmo database trailer entry')
         print('clean skip\t - Clears trailer database information for trailers with Skip status ')
+        print('clean missing\t - Clears trailer database information for trailers with Missing trailer file status ')
         print('\nbackup\t\t - Creates a time stamped file name backup of the Mezzmo Trailer Checker database')
         print('update\t\t - Force update check for yt-dlp.exe.  Otherwise check is once a day.') 
         print('\n=====================================================================================================')
@@ -370,8 +372,8 @@ def getMezzmoTrailers(sysarg1= ''):                                     #  Query
             print(mgenlog)
 
     except Exception as e:
-        print (e)
-        mgenlog = 'There was an error getting Mezzmo trailer information'
+        #print (e)
+        mgenlog = 'There was an error getting Mezzmo trailer information ' + str(e)
         print(mgenlog)
         genLog(mgenlog)           
 
@@ -644,8 +646,8 @@ def getMovieList(sysarg1= '', sysarg2= '', sysarg3= ''):                  # Get 
         db.close()
 
     except Exception as e:
-        print (e)
-        mgenlog = "There was a problem getting the movie list." 
+        #print (e)
+        mgenlog = "There was a problem getting the movie list. " + str(e)
         print(mgenlog)
         genLog(mgenlog) 
 
@@ -758,8 +760,8 @@ def updateMezzmo(fileID, db):                                             # Upda
         return (count - 1)
 
     except Exception as e:
-        print (e)
-        mgenlog = 'There was a problem updating Mezzmo DB for trailer info.'
+        #print (e)
+        mgenlog = 'There was a problem updating Mezzmo DB for trailer info. ' + str(e)
         genLog(mgenlog)
         print(mgenlog)
         return 0 
@@ -888,8 +890,8 @@ def checkFormats(db, sysarg1, sysarg2 = ''):                             # Check
             genLog(mgenlog)
 
     except Exception as e:
-        print (e)
-        mgenlog = "There was a problem adjusting the output formats."
+        #print (e)
+        mgenlog = "There was a problem adjusting the output formats. " + str(e)
         print(mgenlog)
         genLog(mgenlog)  
         db.close()
@@ -916,8 +918,8 @@ def noTrailer():                                         # Update Temp table for
         db.close()
 
     except Exception as e:
-        print (e)
-        mgenlog = "There was a problem updating the temp table for finding no trailers"
+        #print (e)
+        mgenlog = "There was a problem updating the temp table for finding no trailers " + str(e)
         print(mgenlog)
         genLog(mgenlog)  
 
@@ -980,7 +982,7 @@ def checkiTrailer(imdb_id, meztitle):                      # Find IMDB trailer U
         baseurl = 'https://tv-api.com/en/API/Trailer/'
 
         conn = http.client.HTTPSConnection("tv-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.25'}
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.28'}
         req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -1018,6 +1020,9 @@ def checkiTrailer(imdb_id, meztitle):                      # Find IMDB trailer U
         #print(imdbtitle + ' ' + imdbtrailer)
 
         if 'https://www.imdb.com/video/' in imdbtrailer:  # Found trailer
+            if imdbtrailer.count('https://') == 2:        # Fix issue with duplicate https:// from Tv API
+                lpos = imdbtrailer.find('video/')
+                imdbtrailer = (imdbtrailer[lpos+6:])
             mgenlog = ("IMDB trailer found for  - " + imdb_id)
             print(mgenlog)
             genLog(mgenlog)
@@ -1026,8 +1031,8 @@ def checkiTrailer(imdb_id, meztitle):                      # Find IMDB trailer U
            return ("none", "none") 
 
     except Exception as e:
-        print (e)
-        mgenlog = "There was a problem getting the IMDB trailer information" 
+        #print (e)
+        mgenlog = "There was a problem getting the IMDB trailer information "  + str(e)
         print(mgenlog)
         genLog(mgenlog) 
         return ("none", "none")
@@ -1126,8 +1131,8 @@ def getTrailer(trailer, imdbtitle = ''):                   # Download You Tube \
             return [fetch_result, '0', '0', '0', '0']
     
     except Exception as e:
-        print (e)
-        mgenlog = 'There was a problem getting the formats information'
+        #print (e)
+        mgenlog = 'There was a problem getting the formats information ' + str(e)
         genLog(mgenlog)
         print(mgenlog)
 
@@ -1271,12 +1276,33 @@ def convertTrailer(trailerfile, trfps, checktr=''):  # Adjust frame rate and aud
                 mgenlog = 'Backup trailer successful: ' + trailerfile
                 genLog(mgenlog)
                 print(mgenlog)
+
             if hwenc.lower() in ['nevc']:                                   # nVidia HW encoding
-                frcommand = "ffmpeg -i " + trailerfile + " -c:v h264_nvenc -filter:v fps=" + trfrate + " converted.mp4 >nul 2>nul"
+                frcommand = "ffmpeg -i " + trailerfile + " -c:v h264_nvenc -filter:v fps=" + trfrate + " -y converted.mp4 >nul 2>nul"
+                genLog(frcommand)
+                os.system(frcommand)
+                filestat = os.stat('./converted.mp4')
+                fsize = filestat.st_size            # Get trailer size in bytes
+                #print('File size is: ' + str(fsize))
+                if fsize == 0:                      # Check for successful conversion
+                    mgenlog = "A problem occurred using HW acceleration.  Attempting software only: " + trailerfile
+                    genLog(mgenlog)
+                    print(mgenlog) 
+                    #command = 'del converted.mp4 /q >nul 2>nul'            #  Remove old converted files
+                    #os.system(command)                                     #  Clear converted files 
+                    frcommand = "ffmpeg -i " + trailerfile + " -filter:v fps=" + trfrate + " -y converted.mp4 >nul 2>nul"
+                    genLog(frcommand)
+                    os.system(frcommand)                   
             else:
-                frcommand = "ffmpeg -i " + trailerfile + " -filter:v fps=" + trfrate + " converted.mp4 >nul 2>nul"
+                frcommand = "ffmpeg -i " + trailerfile + " -filter:v fps=" + trfrate + " -y converted.mp4 >nul 2>nul"
+                genLog(frcommand)
+                os.system(frcommand)        
             #print(frcommand)
-            mgenlog = "Ajusting frame rate to " + trfrate + " for: " + trailerfile
+            if not os.path.isfile('./converted.mp4'):                      # Check for successful conversion
+                mgenlog = "A problem occurred converting trailer file: " + trailerfile
+            else:  
+                mgenlog = "Ajusted frame rate to " + trfrate + " for: " + trailerfile
+
         elif trfrate != '0' and trfrate != trfps and audiolvl != '100':    # Adjust frame rate and audio
             if 'yes' in trback.lower():
                 backuploc = os.path.join(ltrailerloc, "backup")
@@ -1288,12 +1314,31 @@ def convertTrailer(trailerfile, trfps, checktr=''):  # Adjust frame rate and aud
             volvl = str(float(audiolvl)/100)
             if hwenc.lower() in ['nevc']:                                   # nVidia HW encoding
                 frcommand = "ffmpeg -i " + trailerfile + " -c:v h264_nvenc -filter:v fps=" + trfrate +    \
-                "-filter:a volume=" + volvl + " converted.mp4 >nul 2>nul"
+                "-filter:a volume=" + volvl + " -y converted.mp4 >nul 2>nul"
+                genLog(frcommand)
+                os.system(frcommand)         
+                filestat = os.stat('./converted.mp4')
+                fsize = filestat.st_size            # Get trailer size in bytes
+                #print('File size is: ' + str(fsize))
+                if fsize == 0:                      # Check for successful conversion
+                    mgenlog = "A problem occurred using HW acceleration.  Attempting software only: " + trailerfile
+                    genLog(mgenlog)
+                    print(mgenlog)  
+                    frcommand = "ffmpeg -i " + trailerfile + " -filter:v fps=" + trfrate + "-filter:a volume=" + volvl \
+                    + " -y converted.mp4 >nul 2>nul"
+                    genLog(frcommand)
+                    os.system(frcommand)        
             else:
                 frcommand = "ffmpeg -i " + trailerfile + " -filter:v fps=" + trfrate + "-filter:a volume=" + volvl \
-                + " converted.mp4 >nul 2>nul"
+                + " -y converted.mp4 >nul 2>nul"
+                genLog(frcommand)
+                os.system(frcommand)        
             #print(frcommand)
-            mgenlog = "Ajusting frame rate and audio to " + trfrate + ":" + audiolvl + " for: " + trailerfile
+            if not os.path.isfile('./converted.mp4'):                      # Check for successful conversion
+                mgenlog = "A problem occurred converting trailer file: " + trailerfile
+            else:  
+                mgenlog = "Ajusted frame rate and audio to " + trfrate + ":" + audiolvl + " for: " + trailerfile
+
         elif (trfrate == '0' or trfrate == trfps) and audiolvl != '100':    # Adjust audio only
             if 'yes' in trback.lower():
                 backuploc = os.path.join(ltrailerloc, "backup")
@@ -1305,17 +1350,39 @@ def convertTrailer(trailerfile, trfps, checktr=''):  # Adjust frame rate and aud
             volvl = str(float(audiolvl)/100)
             if hwenc.lower() in ['nevc']:                                   # nVidia HW encoding
                 frcommand = "ffmpeg -i " + trailerfile +  " -c:v h264_nvenc -filter:a volume=" \
-                + volvl + " converted.mp4 >nul 2>nul"
+                + volvl + " -y converted.mp4 >nul 2>nul"
+                genLog(frcommand)
+                os.system(frcommand)        
+                filestat = os.stat('./converted.mp4')
+                fsize = filestat.st_size            # Get trailer size in bytes
+                #print('File size is: ' + str(fsize))
+                if fsize == 0:                      # Check for successful conversion
+                    mgenlog = "A problem occurred using HW acceleration.  Attempting software only: " + trailerfile
+                    genLog(mgenlog)
+                    print(mgenlog)  
+                    frcommand = "ffmpeg -i " + trailerfile +  " -filter:a volume=" + volvl \
+                    + " -y converted.mp4 >nul 2>nul"
+                    genLog(frcommand)
+                    os.system(frcommand)        
             else:
                 frcommand = "ffmpeg -i " + trailerfile +  " -filter:a volume=" + volvl \
-                + " converted.mp4 >nul 2>nul"
+                + " -y converted.mp4 >nul 2>nul"
+                genLog(frcommand)
+                os.system(frcommand)        
             #print(frcommand)
-            mgenlog = "Ajusting audio volume to " + audiolvl + " for: " + trailerfile
-
+            if not os.path.isfile('./converted.mp4'):                      # Check for successful conversion
+                mgenlog = "A problem occurred converting trailer file: " + trailerfile
+            else:
+                filestat = os.stat('./converted.mp4')
+                fsize = filestat.st_size                                   # Get trailer size in bytes
+                if fsize > 0:  
+                    mgenlog = "Ajusted audio volume to " + audiolvl + " for: " + trailerfile
+                else:
+                    mgenlog = "A problem occurred converting trailer file: " + trailerfile
         genLog(mgenlog)
         print(mgenlog)
-        genLog(frcommand)
-        os.system(frcommand)
+        #genLog(frcommand)
+        #os.system(frcommand)
         if ltrailerloc not in trailerfile:
             copytrailer = os.path.join(ltrailerloc, trailerfile)
         else:
@@ -1569,8 +1636,8 @@ def checkFolders():                                # Check folders and files
   
 
     except Exception as e:
-        print (e)
-        mgenlog = 'There was a problem checking folders'
+        #print (e)
+        mgenlog = 'There was a problem checking folders ' + str(e)
         genLog(mgenlog)
         print(mgenlog)    
 
@@ -1656,8 +1723,8 @@ def checkFiles(sysarg1 = '', sysarg2 = '', ccount = 0): # Check size, resolution
         return
 
     except Exception as e:
-        print (e)
-        mgenlog = "There was a problem checking files: "
+        #print (e)
+        mgenlog = "There was a problem checking files: " + str(e)
         print(mgenlog)
         genLog(mgenlog) 
 
@@ -1755,8 +1822,8 @@ def moveTrailers():                                 # Move trailers to trailer l
         #print(command)
         os.system(command)
     except Exception as e:
-        print (e)
-        mgenlog = 'There was a problem moving trailers to the trailer folder.'
+        #print (e)
+        mgenlog = 'There was a problem moving trailers to the trailer folder. ' + str(e)
         genLog(mgenlog)
         print(mgenlog)
 
@@ -1795,11 +1862,11 @@ def checkUpdate(sysarg1):                          # Check for yt-dlp.exe update
 
 
     except Exception as e:
-        print (e)
-        mgenlog = 'There was a problem checking for a yt-dlp.exe update.'
+        #print (e)
+        mgenlog = 'There was a problem checking for a yt-dlp.exe update. ' + str(e)
         genLog(mgenlog)
         print(mgenlog)
-        exit()
+        sys.exit()
 
 
 def checkCsv(sysarg1 = '', sysarg2 = ''):           # Generate CSV files
@@ -1860,8 +1927,8 @@ def writeCSV(filename, headers, recs):
             csvFile.writerow(recsencode)               
 
     except Exception as e:
-        print (e)
-        mgenlog = 'An error occurred creating the CSV file.'
+        #print (e)
+        mgenlog = 'An error occurred creating the CSV file. ' + str(e)
         genLog(mgenlog)
         pring(mgenlog)
 
@@ -1925,8 +1992,8 @@ def getTotals():                                             # Gets checked down
         return [daytuple[0], htottuple[0]]
 
     except Exception as e:
-        print (e)
-        mgenlog = 'An error occurred generating totals.'
+        #print (e)
+        mgenlog = 'An error occurred generating totals. ' + str(e)
         genLog(mgenlog)
         print(mgenlog)
 
@@ -1960,8 +2027,8 @@ def showErrors(sysarg1= '', sysarg2= ''):                     # Show movies with
 
 
     except Exception as e:
-        print (e)
-        mgenlog = 'An error occurred showing bad movies.'
+        #print (e)
+        mgenlog = 'An error occurred showing bad movies. ' + str(e)
         genLog(mgenlog)
         print(mgenlog)
 
@@ -1989,8 +2056,8 @@ def makeBackups():                                   # Make database backups
         print(mgenlog) 
 
     except Exception as e:
-        print (e)
-        mgenlog = 'An error occurred creating a Mezzmo Trailer Checker backup.'
+        #print (e)
+        mgenlog = 'An error occurred creating a Mezzmo Trailer Checker backup. ' + str(e)
         genLog(mgenlog)
         print(mgenlog)      
 
@@ -1999,7 +2066,7 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
 
 
         if sysarg1.lower() not in ['show', 'clean'] or  sysarg2.lower() not in         \
-        ['name', 'number', 'files', 'bad', 'long', 'skip']: 
+        ['name', 'number', 'files', 'bad', 'long', 'skip', 'missing']: 
             return
         elif sysarg2.lower() in ['name', 'number'] and len(sysarg3) == 0:
            print('A movie name or movie number is required.')
@@ -2102,9 +2169,21 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
                 db.close()
                 return
 
+        elif sysarg2.lower() in 'missing':
+            db = openTrailerDB()
+            dbcurr = db.execute('SELECT * from mTrailers WHERE trStatus=?    \
+            ORDER BY mgofile_title, extras_ID', ('Missing',))
+            dbtuples = dbcurr.fetchall() 
+            if len(dbtuples) == 0:
+                mgenlog = 'No trailers found with Missing trailer file status'
+                genLog(mgenlog)
+                print(mgenlog)
+                db.close()
+                return
+
         print('The number of trailers found: ' + str(len(dbtuples)))
 
-        if sysarg2.lower() in ['name', 'number', 'bad', 'long', 'skip']:
+        if sysarg2.lower() in ['name', 'number', 'bad', 'long', 'skip', 'missing']:
             print('\n\n Movie #   Trailer # \tStatus\t\tMovie Title    \t\t\t Trailer File\n')
             for trailer in dbtuples:
                 status = '   '
@@ -2128,7 +2207,7 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
                 print(mgenlog)                
                 db.close()
                 return 
-        if 'clean' in sysarg1.lower() and sysarg2.lower() in ['bad', 'long', 'skip']:  # Do you want to delete ?
+        elif 'clean' in sysarg1.lower() and sysarg2.lower() in ['bad', 'long', 'skip', 'missing']:  # Do you want to delete ?
             choice = input('Do you want to delete these trailers (Y/N) ?  They will be removed from the Trailer Checker database\n')
             if 'n' in choice.lower():
                 mgenlog = 'Trailers will not be cleaned with status: ' + str(sysarg2)
@@ -2162,6 +2241,9 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
         elif sysarg2.lower() in 'skip' and sysarg1.lower() in "clean":
             dbcurr = db.execute('DELETE from mTrailers WHERE trStatus=?', ('Skip',))
             db.commit()
+        elif sysarg2.lower() in 'missing' and sysarg1.lower() in "clean":
+            dbcurr = db.execute('DELETE from mTrailers WHERE trStatus=?', ('Missing',))
+            db.commit()
         elif sysarg2.lower() in 'files' and sysarg1.lower() in "clean":
             gcount = bcount = 0
 
@@ -2180,7 +2262,7 @@ def cleanTrailers(sysarg1 = '', sysarg2 = '', sysarg3 = ''): # Clean show movie 
             mgenlog = 'Trailers successfully cleaned for movie: ' + str(sysarg3)
             genLog(mgenlog)
             print(mgenlog)
-        if sysarg1.lower() in "clean" and sysarg2.lower() in ['bad', 'long']:        
+        if sysarg1.lower() in "clean" and sysarg2.lower() in ['bad', 'long', 'skip', 'missing']:        
             mgenlog = 'Trailers successfully cleaned with status: ' + str(sysarg2)
             genLog(mgenlog)
             print(mgenlog)
@@ -2310,8 +2392,8 @@ def displayStats(sysarg1, ssyarg2 = ''):              # Display statistics
 
 
     except Exception as e:
-        print (e)
-        mgenlog = "There was a problem displaying statistics "
+        #print (e)
+        mgenlog = "There was a problem displaying statistics  " + str(e)
         print(mgenlog)
         genLog(mgenlog) 
 
