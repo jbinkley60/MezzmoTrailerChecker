@@ -16,10 +16,10 @@ totcount = bdcount = gdcount = mvcount = nontrcount = 0
 trlcount = skipcount = longcount = 0
 
 movie_url = 'https://api.themoviedb.org/3/movie/{}?'
-headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.28'}
+headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.29'}
 tmdb_key = 'a6898792995042896256585082db0842'
 
-version = 'version 0.0.28'
+version = 'version 0.0.29'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -70,8 +70,8 @@ def getConfig():
         data = fileh.readline()                                        # Get number of trailers per movie
         datad = data.split('#')                                        # Remove comments
         trfetchcount = datad[0].strip().rstrip("\n")                   # cleanup unwanted characters
-        if int(trfetchcount) > 50:
-            trfetchcount = 50                                          # Max trailer per movie is 50
+        if int(trfetchcount) > 100:
+            trfetchcount = 100                                          # Max trailer per movie is 100
 
         data = fileh.readline()                                        # Get trailer max resolution
         datae = data.split('#')                                        # Remove comments

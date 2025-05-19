@@ -1,3 +1,8 @@
+v0.0.29 5/19/2025
+
+- Increased the config setting for number of trailers per move to 100.  See wiki page
+  for setting recommendations.
+
 v0.0.28 3/31/2025
 
 - Added a fix to address an issue where TV-API (i.e. IMDB) was returning a trailer
