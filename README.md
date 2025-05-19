@@ -18,7 +18,7 @@ A utility to help you manage your Mezzmo local trailer files.
 - Automatically move trailers to designated location (i.e. NAS, local disk etc.)
 - Option for automatically <a href="https://github.com/Conceiva/MezzmoKodiPlugin/wiki/Managing-Your-Library#metadata-locking">locking the Mezzmo metadata</a> to avoid overriding trailer information
 - Option for how many movies to check in each batch run of the Mezzmo Trailer Checker (1-20)
-- Option to limit how many trailers per movie (1-20)
+- Option to limit how many trailers per movie (1-100)
 - Option to order trailers by size
 - Option for supporting prefer <a href="https://github.com/Conceiva/MezzmoKodiPlugin/wiki/Movie-Trailers#prefer-local-trailers">local trailer capability</a> to allow You Tube trailers for Mezzmo web interface
 - Option to automatically adjust / standardize trailer frame rates
