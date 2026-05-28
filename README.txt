@@ -1,6 +1,16 @@
+0.0.30 5/28/2026
+
+- Fixed bugs causing most recent You Tube trailer fetching to fail
+- Added support for certain additional You Tube formats
+- Added Deno detection and support for You Tube available format JS parsing
+- Improved reporting when no acceptable formats are available to download
+- Additional configuration option added to support IMDB browser session
+cookies required to download IMDB trailers. 
+
+
 v0.0.29 5/19/2025
 
-- Increased the config setting for number of trailers per movie to 100.  See wiki page
+- Increased the config setting for number of trailers per move to 100.  See wiki page
   for setting recommendations.
 
 v0.0.28 3/31/2025

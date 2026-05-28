@@ -7,6 +7,7 @@ import urllib.request, urllib.parse, urllib.error
 import http.client
 import mimetypes
 import subprocess
+import requests
 import string, random, re, base64
 from urllib.request import Request, urlopen
 
@@ -16,10 +17,10 @@ totcount = bdcount = gdcount = mvcount = nontrcount = 0
 trlcount = skipcount = longcount = 0
 
 movie_url = 'https://api.themoviedb.org/3/movie/{}?'
-headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.29'}
+headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.30'}
 tmdb_key = 'a6898792995042896256585082db0842'
 
-version = 'version 0.0.29'
+version = 'version 0.0.30'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -202,11 +203,21 @@ def getConfig():
             data = fileh.readline()                                    # Check for clean skipped tailers option
             if data != '':
                 datax = data.split('#')                                # Remove comments
-                cleanskp = datax[0].strip().rstrip("\n")                 # cleanup unwanted characters
+                cleanskp = datax[0].strip().rstrip("\n")               # cleanup unwanted characters
             else:
                 cleanskp = "No"
         else:
-            cleanskp = "No"                
+            cleanskp = "No" 
+
+        if linecount > 24:
+            data = fileh.readline()                                    # Check for IMDB browser type option
+            if data != '':
+                datay = data.split('#')                                # Remove comments
+                browsert = datay[0].strip().rstrip("\n")               # cleanup unwanted characters
+            else:
+                browsert = "None"
+        else:
+            browsert = "None"                               
      
         fileh.close()                                                  # close the file
         
@@ -235,6 +246,7 @@ def getConfig():
                      'tformat': tformat,
                      'tronly': tronly,
                      'cleanskp': cleanskp,
+                     'browsert': browsert
                     }
 
         if not tformat in ['mkv', 'mp4']:
@@ -245,7 +257,7 @@ def getConfig():
 
         configuration = [mezzmodbfile, ltrailerloc, mtrailerloc, mfetchcount, trfetchcount]
         configuration1 = [maxres, maxdur, mlock, mperf, ofperf, obsize, onlylt, logoutfile]
-        configuration2 = [maxcheck, youlimit, trfrate, trback, hwenc, tformat, tronly, cleanskp]
+        configuration2 = [maxcheck, youlimit, trfrate, trback, hwenc, tformat, tronly, cleanskp, browsert]
         mgenlog = ("Mezzmo Trailer Checker started - " + version)
         print(mgenlog)
         genLog(mgenlog)
@@ -982,7 +994,7 @@ def checkiTrailer(imdb_id, meztitle):                      # Find IMDB trailer U
         baseurl = 'https://tv-api.com/en/API/Trailer/'
 
         conn = http.client.HTTPSConnection("tv-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.28'}
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.30'}
         req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -1043,24 +1055,31 @@ def getTrailer(trailer, imdbtitle = ''):                   # Download You Tube \
     try:
         global tr_config
         maxres = int(tr_config['maxres'])                  # Get max resolution
+        browsert = tr_config['browsert'].lower()
         tr_cmd = fmt = ''
-        formats = str(getFormats(trailer, imdbtitle))     # Get available trailer formats
+        #print(trailer)
+        if "imdb.com" in trailer and browsert in ['firefox', 'chrome', 'edge']:
+            input(f'Refresh {browsert} browser when viewing https://www.imdb.com to set session cookies. Then enter to proceed. \n')
+            imdb_cookies = '--cookies-from-browser ' + browsert + ' '
+        else:
+            imdb_cookies = ' ' 
+        formats = str(getFormats(trailer, imdbtitle, imdb_cookies))     # Get available trailer formats
         mgenlog = 'Trailer formats result is: ' + str(formats)
         genLog(mgenlog)
         #print('Trailer info: ' + imdbtitle + ' ' + str(maxres)) 
         if 'Error' in formats:                             # You Tube / IMDB error getting formats file
             return 'Error'
         elif 'imdb' in imdbtitle and '1080p' in formats and maxres >= 1080:         # 1080 available for IMDB   
-            tr_cmd = "yt-dlp.exe -f 1080p -q --check-formats --windows-filenames " + trailer
+            tr_cmd = f'yt-dlp.exe -f 1080p -q --check-formats --windows-filenames {imdb_cookies}' + trailer
             fmt = '1080p' 
         elif 'imdb' in imdbtitle and '720p' in formats and maxres >= 720:           # 720 available for IMDB   
-            tr_cmd = "yt-dlp.exe -f 720p -q --check-formats --windows-filenames " + trailer
+            tr_cmd = f'yt-dlp.exe -f 720p -q --check-formats --windows-filenames {imdb_cookies}' + trailer
             fmt = '720p' 
         elif 'imdb' in imdbtitle and '480p' in formats and maxres >= 480:           # 480 available for IMDB   
-            tr_cmd = "yt-dlp.exe -f 480p -q --check-formats --windows-filenames " + trailer
+            tr_cmd = f'yt-dlp.exe -f 480p -q --check-formats --windows-filenames {imdb_cookies}' + trailer
             fmt = '480p' 
         elif 'imdb' in imdbtitle and 'SD' in formats:                               # SD available for IMDB   
-            tr_cmd = "yt-dlp.exe -f SD -q --check-formats --windows-filenames " + trailer
+            tr_cmd = f'yt-dlp.exe -f SD -q --check-formats --windows-filenames {imdb_cookies}' + trailer
             fmt = '360p'        
         elif '137 mp4' in formats and '140 m4a' in formats and maxres >= 1080:      # 1080P available
             tr_cmd = "yt-dlp.exe -f 137+140 -q --check-formats --restrict-filenames " + trailer
@@ -1074,8 +1093,11 @@ def getTrailer(trailer, imdbtitle = ''):                   # Download You Tube \
         elif '137     mp4' in formats and '139     m4a' in formats  and maxres >= 1080:     # 1080P available
             tr_cmd = "yt-dlp.exe -f 137+139 -q --check-formats --restrict-filenames " + trailer
             fmt = '1080p'  
-        elif '22  mp4' in formats and maxres >= 720:                                # 720P available
+        elif '22 mp4' in formats and maxres >= 720:                                # 720P available
             tr_cmd = "yt-dlp.exe -f 22 -q --restrict-filenames " + trailer
+            fmt = '720p'
+        elif '136 mp4' in formats and maxres >= 720:                                # 720P available
+            tr_cmd = "yt-dlp.exe -f 136 -q --restrict-filenames " + trailer
             fmt = '720p'
         elif '22      mp4' in formats and maxres >= 720:                            # 720P available
             tr_cmd = "yt-dlp.exe -f 22 -q --restrict-filenames " + trailer
@@ -1091,6 +1113,9 @@ def getTrailer(trailer, imdbtitle = ''):                   # Download You Tube \
             fmt = '480p'
         elif  '135     mp4' in formats and '139     m4a' in formats and maxres >= 480:      # 480P available
             tr_cmd = "yt-dlp.exe -f 135+139 -q --check-formats --restrict-filenames " + trailer
+            fmt = '480p'
+        elif '134 mp4' in formats and maxres >= 480:                                # 480P available
+            tr_cmd = "yt-dlp.exe -f 134 -q --restrict-filenames " + trailer
             fmt = '480p'  
         elif '18  mp4' in formats:                                                  # 360P available
             tr_cmd = "yt-dlp.exe -f 18 -q --restrict-filenames " + trailer
@@ -1099,6 +1124,9 @@ def getTrailer(trailer, imdbtitle = ''):                   # Download You Tube \
             tr_cmd = "yt-dlp.exe -f 18 -q --restrict-filenames " + trailer
             fmt = '360p'
         else:
+            mgenlog = "There were no matching video - audio formats found to fetch. "
+            print(mgenlog)
+            genLog(mgenlog) 
             return 'Error'                                 # No acceptable format available 
         
         #print (tr_cmd)
@@ -1137,27 +1165,37 @@ def getTrailer(trailer, imdbtitle = ''):                   # Download You Tube \
         print(mgenlog)
 
 
-def getFormats(trailer,imdbtitle = ''):             # Get available You Tube Trailer formats
+def getFormats(trailer,imdbtitle = '', imdb_cookies = ''): # Get available You Tube Trailer formats
 
     try:
         global tr_config
 
         #maxres = int(tr_config['maxres'])          # Get max resolution
         formats = []
-        tr_cmd = "yt-dlp.exe -F " + trailer + " > output.txt"
+        if "imdb.com" in trailer:                   #  Set session cookies for IMDB
+            tr_cmd = f'yt-dlp.exe -F {imdb_cookies} {trailer} > output.txt'
+        else:                                       # You tube trailer
+            tr_cmd = "yt-dlp.exe -F " + trailer + " > output.txt"
+        #print(tr_cmd)
         fetch_result = subprocess.call(tr_cmd, shell=True)
 
         if fetch_result == 0:
             fileh = open("output.txt")             # open formats file
-            data = fileh.readlines()            
+            data = fileh.readlines()
+            if 'deno' in data[4]:
+                mgenlog = "Deno JS parsing support found"
+                genLog(mgenlog)
+                print(mgenlog)            
             for x in range(6, len(data)):
+                #print(data[x])
                 if 'imdb' in imdbtitle:
                     formats.append(data[x][:5].strip())    # List of available formats
                 elif data[x][13:14] == ' ' :               # New format
                     formats.append(data[x][:14].strip())   # List of available formats
                 else:                                      # Old format
-                    formats.append(data[x][:7].strip())    # List of available formats
-            fileh.close()  
+                    formats.append(data[x][:8].replace('  ', ' ').replace('   ', ' ').strip())    # List of available formats
+            fileh.close()
+            #print(str(formats))  
             return formats
         else:
             return 'Error'
@@ -1301,7 +1339,7 @@ def convertTrailer(trailerfile, trfps, checktr=''):  # Adjust frame rate and aud
             if not os.path.isfile('./converted.mp4'):                      # Check for successful conversion
                 mgenlog = "A problem occurred converting trailer file: " + trailerfile
             else:  
-                mgenlog = "Ajusted frame rate to " + trfrate + " for: " + trailerfile
+                mgenlog = "Adjusted frame rate to " + trfrate + " for: " + trailerfile
 
         elif trfrate != '0' and trfrate != trfps and audiolvl != '100':    # Adjust frame rate and audio
             if 'yes' in trback.lower():
@@ -1337,7 +1375,7 @@ def convertTrailer(trailerfile, trfps, checktr=''):  # Adjust frame rate and aud
             if not os.path.isfile('./converted.mp4'):                      # Check for successful conversion
                 mgenlog = "A problem occurred converting trailer file: " + trailerfile
             else:  
-                mgenlog = "Ajusted frame rate and audio to " + trfrate + ":" + audiolvl + " for: " + trailerfile
+                mgenlog = "Adjusted frame rate and audio to " + trfrate + ":" + audiolvl + " for: " + trailerfile
 
         elif (trfrate == '0' or trfrate == trfps) and audiolvl != '100':    # Adjust audio only
             if 'yes' in trback.lower():
@@ -1376,7 +1414,7 @@ def convertTrailer(trailerfile, trfps, checktr=''):  # Adjust frame rate and aud
                 filestat = os.stat('./converted.mp4')
                 fsize = filestat.st_size                                   # Get trailer size in bytes
                 if fsize > 0:  
-                    mgenlog = "Ajusted audio volume to " + audiolvl + " for: " + trailerfile
+                    mgenlog = "Adjusted audio volume to " + audiolvl + " for: " + trailerfile
                 else:
                     mgenlog = "A problem occurred converting trailer file: " + trailerfile
         genLog(mgenlog)

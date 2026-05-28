@@ -22,3 +22,4 @@ Yes						# Prepend "ytube_" to You Tube trailers.  This is helpful if you have m
 mp4						# Output format.  mp4 or mkv.  mp4 is default. 
 No						# Only add TMDB YouTube trailers to Mezzmo.  No is default.
 No						# Clean skipped non-Trailer TMDB files from Trailer DB.  No is  default.
+firefox						# IMDB Browser session type (None, firefox, chrome, edge).  None is default.
