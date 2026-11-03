@@ -1,3 +1,10 @@
+0.0.31 11/3/2026
+
+- Significant rewrite of the You Tube formats parser to handle additional trailer
+formats including different languages.  Without this update some trailers would not
+be downloaded even though they were available.    
+
+
 0.0.30 5/28/2026
 
 - Fixed bugs causing most recent You Tube trailer fetching to fail

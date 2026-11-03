@@ -17,10 +17,10 @@ totcount = bdcount = gdcount = mvcount = nontrcount = 0
 trlcount = skipcount = longcount = 0
 
 movie_url = 'https://api.themoviedb.org/3/movie/{}?'
-headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.30'}
+headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.31'}
 tmdb_key = 'a6898792995042896256585082db0842'
 
-version = 'version 0.0.30'
+version = 'version 0.0.31'
 
 sysarg1 = sysarg2 = sysarg3 = sysarg4 = ''
 
@@ -994,7 +994,7 @@ def checkiTrailer(imdb_id, meztitle):                      # Find IMDB trailer U
         baseurl = 'https://tv-api.com/en/API/Trailer/'
 
         conn = http.client.HTTPSConnection("tv-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.30'}
+        headers = {'User-Agent': 'Mezzmo Trailer Checker 0.0.31'}
         req = '/en/API/Trailer/' + imdbky + '/' + imdb_id
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -1063,64 +1063,88 @@ def getTrailer(trailer, imdbtitle = ''):                   # Download You Tube \
             imdb_cookies = '--cookies-from-browser ' + browsert + ' '
         else:
             imdb_cookies = ' ' 
-        formats = str(getFormats(trailer, imdbtitle, imdb_cookies))     # Get available trailer formats
+        formats = getFormats(trailer, imdbtitle, imdb_cookies)    # Get available trailer formats
+        idlist = [d["id_base"] for d in formats]
+        #print(idlist)
+        #formats_string = str(formats)
         mgenlog = 'Trailer formats result is: ' + str(formats)
         genLog(mgenlog)
         #print('Trailer info: ' + imdbtitle + ' ' + str(maxres)) 
-        if 'Error' in formats:                             # You Tube / IMDB error getting formats file
+        if 'Error' in str(formats):                             # You Tube / IMDB error getting formats file
             return 'Error'
-        elif 'imdb' in imdbtitle and '1080p' in formats and maxres >= 1080:         # 1080 available for IMDB   
+        elif 'imdb' in imdbtitle and '1080p' in str(formats) and maxres >= 1080:         # 1080 available for IMDB   
             tr_cmd = f'yt-dlp.exe -f 1080p -q --check-formats --windows-filenames {imdb_cookies}' + trailer
             fmt = '1080p' 
-        elif 'imdb' in imdbtitle and '720p' in formats and maxres >= 720:           # 720 available for IMDB   
+        elif 'imdb' in imdbtitle and '720p' in str(formats) and maxres >= 720:           # 720 available for IMDB   
             tr_cmd = f'yt-dlp.exe -f 720p -q --check-formats --windows-filenames {imdb_cookies}' + trailer
             fmt = '720p' 
-        elif 'imdb' in imdbtitle and '480p' in formats and maxres >= 480:           # 480 available for IMDB   
+        elif 'imdb' in imdbtitle and '480p' in str(formats) and maxres >= 480:           # 480 available for IMDB   
             tr_cmd = f'yt-dlp.exe -f 480p -q --check-formats --windows-filenames {imdb_cookies}' + trailer
             fmt = '480p' 
-        elif 'imdb' in imdbtitle and 'SD' in formats:                               # SD available for IMDB   
+        elif 'imdb' in imdbtitle and 'SD' in str(formats):                               # SD available for IMDB   
             tr_cmd = f'yt-dlp.exe -f SD -q --check-formats --windows-filenames {imdb_cookies}' + trailer
-            fmt = '360p'        
-        elif '137 mp4' in formats and '140 m4a' in formats and maxres >= 1080:      # 1080P available
-            tr_cmd = "yt-dlp.exe -f 137+140 -q --check-formats --restrict-filenames " + trailer
-            fmt = '1080p'
-        elif '137     mp4' in formats and '140     m4a' in formats and maxres >= 1080:      # 1080P available
-            tr_cmd = "yt-dlp.exe -f 137+140 -q --check-formats --restrict-filenames " + trailer
-            fmt = '1080p'  
-        elif '137 mp4' in formats and '139 m4a' in formats  and maxres >= 1080:     # 1080P available
-            tr_cmd = "yt-dlp.exe -f 137+139 -q --check-formats --restrict-filenames " + trailer
-            fmt = '1080p'
-        elif '137     mp4' in formats and '139     m4a' in formats  and maxres >= 1080:     # 1080P available
-            tr_cmd = "yt-dlp.exe -f 137+139 -q --check-formats --restrict-filenames " + trailer
-            fmt = '1080p'  
-        elif '22 mp4' in formats and maxres >= 720:                                # 720P available
-            tr_cmd = "yt-dlp.exe -f 22 -q --restrict-filenames " + trailer
-            fmt = '720p'
-        elif '136 mp4' in formats and maxres >= 720:                                # 720P available
-            tr_cmd = "yt-dlp.exe -f 136 -q --restrict-filenames " + trailer
-            fmt = '720p'
-        elif '22      mp4' in formats and maxres >= 720:                            # 720P available
-            tr_cmd = "yt-dlp.exe -f 22 -q --restrict-filenames " + trailer
-            fmt = '720p'  
-        elif  '135 mp4' in formats and '140 m4a' in formats and maxres >= 480:      # 480P available
-            tr_cmd = "yt-dlp.exe -f 135+140 -q --check-formats --restrict-filenames " + trailer
-            fmt = '480p'
-        elif  '135     mp4' in formats and '140     m4a' in formats and maxres >= 480:      # 480P available
-            tr_cmd = "yt-dlp.exe -f 135+140 -q --check-formats --restrict-filenames " + trailer
-            fmt = '480p'  
-        elif  '135 mp4' in formats and '139 m4a' in formats and maxres >= 480:      # 480P available
-            tr_cmd = "yt-dlp.exe -f 135+139 -q --check-formats --restrict-filenames " + trailer
-            fmt = '480p'
-        elif  '135     mp4' in formats and '139     m4a' in formats and maxres >= 480:      # 480P available
-            tr_cmd = "yt-dlp.exe -f 135+139 -q --check-formats --restrict-filenames " + trailer
-            fmt = '480p'
-        elif '134 mp4' in formats and maxres >= 480:                                # 480P available
-            tr_cmd = "yt-dlp.exe -f 134 -q --restrict-filenames " + trailer
-            fmt = '480p'  
-        elif '18  mp4' in formats:                                                  # 360P available
-            tr_cmd = "yt-dlp.exe -f 18 -q --restrict-filenames " + trailer
             fmt = '360p'
-        elif '18      mp4' in formats:                                              # 360P available
+
+        elif '137' in idlist and '140' in idlist and maxres >= 1080:                     # 1080P available
+            video_dict = formats[idlist.index('137')]
+            video = video_dict.get('id')
+            audio_dict = formats[idlist.index('140')]
+            audio = audio_dict.get('id')           
+            tr_cmd = "yt-dlp.exe -f " + video + "+" + audio + " -q --check-formats --restrict-filenames " + trailer
+            fmt = '1080p'  
+        elif '137' in idlist and '139' in idlist and maxres >= 1080:                     # 1080P available
+            video_dict = formats[idlist.index('137')]
+            video = video_dict.get('id')
+            audio_dict = formats[idlist.index('139')]
+            audio = audio_dict.get('id')           
+            tr_cmd = "yt-dlp.exe -f " + video + "+" + audio + " -q --check-formats --restrict-filenames " + trailer
+            fmt = '1080p'  
+  
+        elif '136' in idlist and '140' in idlist and maxres >= 720:                      # 720P available
+            video_dict = formats[idlist.index('136')]
+            video = video_dict.get('id')
+            audio_dict = formats[idlist.index('140')]
+            audio = audio_dict.get('id')           
+            tr_cmd = "yt-dlp.exe -f " + video + "+" + audio + " -q --check-formats --restrict-filenames " + trailer
+            fmt = '720p'  
+        elif '136' in idlist and '139' in idlist and maxres >= 720:                      # 720P available
+            video_dict = formats[idlist.index('136')]
+            video = video_dict.get('id')
+            audio_dict = formats[idlist.index('139')]
+            audio = audio_dict.get('id')           
+            tr_cmd = "yt-dlp.exe -f " + video + "+" + audio + " -q --check-formats --restrict-filenames " + trailer
+            fmt = '720p' 
+
+        elif '135' in idlist and '140' in idlist and maxres >= 480:                      # 480P available
+            video_dict = formats[idlist.index('135')]
+            video = video_dict.get('id')
+            audio_dict = formats[idlist.index('140')]
+            audio = audio_dict.get('id')           
+            tr_cmd = "yt-dlp.exe -f " + video + "+" + audio + " -q --check-formats --restrict-filenames " + trailer
+            fmt = '480p'  
+        elif '135' in idlist and '139' in idlist and maxres >= 480:                      # 480P available
+            video_dict = formats[idlist.index('135')]
+            video = video_dict.get('id')
+            audio_dict = formats[idlist.index('139')]
+            audio = audio_dict.get('id')           
+            tr_cmd = "yt-dlp.exe -f " + video + "+" + audio + " -q --check-formats --restrict-filenames " + trailer
+            fmt = '480p' 
+        elif '134' in idlist and '140' in idlist and maxres >= 480:                      # 480P available
+            video_dict = formats[idlist.index('134')]
+            video = video_dict.get('id')
+            audio_dict = formats[idlist.index('140')]
+            audio = audio_dict.get('id')           
+            tr_cmd = "yt-dlp.exe -f " + video + "+" + audio + " -q --check-formats --restrict-filenames " + trailer
+            fmt = '480p'  
+        elif '134' in idlist and '139' in idlist and maxres >= 480:                      # 480P available
+            video_dict = formats[idlist.index('134')]
+            video = video_dict.get('id')
+            audio_dict = formats[idlist.index('139')]
+            audio = audio_dict.get('id')           
+            tr_cmd = "yt-dlp.exe -f " + video + "+" + audio + " -q --check-formats --restrict-filenames " + trailer
+            fmt = '480p' 
+
+        elif '18' in idlist:                                                             # 360P available
             tr_cmd = "yt-dlp.exe -f 18 -q --restrict-filenames " + trailer
             fmt = '360p'
         else:
@@ -1172,31 +1196,69 @@ def getFormats(trailer,imdbtitle = '', imdb_cookies = ''): # Get available You T
 
         #maxres = int(tr_config['maxres'])          # Get max resolution
         formats = []
+        formats_dict_list = []
         if "imdb.com" in trailer:                   #  Set session cookies for IMDB
-            tr_cmd = f'yt-dlp.exe -F {imdb_cookies} {trailer} > output.txt'
+            output_file = "output_imdb.txt"
+            tr_cmd = f'yt-dlp.exe -F {imdb_cookies} {trailer} > ' + output_file
         else:                                       # You tube trailer
-            tr_cmd = "yt-dlp.exe -F " + trailer + " > output.txt"
+            output_file = "output_ytube.txt"
+            tr_cmd = "yt-dlp.exe -F " + trailer + " > " + output_file
         #print(tr_cmd)
         fetch_result = subprocess.call(tr_cmd, shell=True)
 
         if fetch_result == 0:
-            fileh = open("output.txt")             # open formats file
+            fileh = open(output_file)             # open formats file
             data = fileh.readlines()
-            if 'deno' in data[4]:
-                mgenlog = "Deno JS parsing support found"
-                genLog(mgenlog)
-                print(mgenlog)            
-            for x in range(6, len(data)):
+            for i in range(len(data)):
+                #print(data[i])
+                if 'deno' in data[i]:
+                    mgenlog = "Deno JS parsing support found"
+                    genLog(mgenlog)
+                    print(mgenlog)
+                elif '----' in data[i]:
+                    startline = i+1
+                    #print('Separator found at line: ' + str(startline))
+                    break
+
+            for x in range(startline, len(data)):          # Parse You Tube formats file
                 #print(data[x])
-                if 'imdb' in imdbtitle:
-                    formats.append(data[x][:5].strip())    # List of available formats
-                elif data[x][13:14] == ' ' :               # New format
-                    formats.append(data[x][:14].strip())   # List of available formats
-                else:                                      # Old format
-                    formats.append(data[x][:8].replace('  ', ' ').replace('   ', ' ').strip())    # List of available formats
+                fixed_string = re.sub(r"\s+", ",", data[x])
+                split_string = fixed_string.split(',')
+                #print(split_string)
+                #print(split_string[1]) 
+                #print('Length of split string is: ' + str(len(split_string)))
+                if 'English' in split_string:
+                    lang_string = 'English'
+                elif  'French' in split_string:
+                    lang_string = 'French'
+                elif  'Spanish' in split_string:
+                    lang_string = 'Spanish'
+                elif '-' in split_string[0]:
+                    lang_string = 'Other'
+                else:
+                    lang_string = 'English'
+                id_base = split_string[0].split('-')[0]
+                formats_dict = {
+                     'id': split_string[0],
+                     'id_base': id_base,
+                     'format': split_string[1],
+                     'resolution': split_string[2],
+                     'lang': lang_string
+                     }
+                #if lang_string in ['English','Spanish','French'] and 'drc' not in split_string[0]:
+                if lang_string in ['English'] and 'drc' not in split_string[0] and 'https' in fixed_string:         # FIlter available formats
+                    formats_dict_list.append(formats_dict)
+                del formats_dict 
+
+                if 'imdb' in imdbtitle:                     # Parse IMDB formats file
+                    formats.append(data[x][:5].strip())     # List of available formats
+
             fileh.close()
-            #print(str(formats))  
-            return formats
+            #print(str(formats))
+            #print(str(formats_dict_list))
+            #print('Length of string dict is: ' + str(len(formats_dict_list)))
+            #sys.exit()  
+            return formats_dict_list
         else:
             return 'Error'
 
